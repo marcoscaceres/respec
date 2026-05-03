@@ -33,11 +33,9 @@ span.warning {
   text-decoration: line-through;
 }
 
-#issue-summary li.closed::after {
-  content: " (Closed)";
-  font-size: smaller;
+#issue-summary li.closed .issue-status {
   text-decoration: none;
-  display: inline;
+  font-size: smaller;
 }
 
 .warning {

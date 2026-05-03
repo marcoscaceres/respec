@@ -708,6 +708,7 @@ describe("Core - Inlines", () => {
     const doc = await makeRSDoc(ops);
     const link = doc.querySelector("#link a");
     expect(link).toBeTruthy();
-    expect(link.getAttribute("href")).toContain("#dfn-bar");
+    const dfn = doc.querySelector("dfn");
+    expect(link.getAttribute("href")).toBe(`#${dfn.id}`);
   });
 });

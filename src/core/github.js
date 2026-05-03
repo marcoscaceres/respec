@@ -105,7 +105,19 @@ export async function run(conf) {
     typeof conf.github === "object" &&
     conf.github.hasOwnProperty("newIssuesURL")
   ) {
-    newIssuesURL = conf.github.newIssuesURL;
+    try {
+      const url = new URL(String(conf.github.newIssuesURL));
+      if (url.protocol !== "https:") {
+        const msg = docLink`${"[github.newIssuesURL]"} must use HTTPS. (${String(conf.github.newIssuesURL)}).`;
+        rejectGithubPromise(msg);
+        return;
+      }
+      newIssuesURL = url.href;
+    } catch {
+      const msg = docLink`${"[github.newIssuesURL]"} is not a valid URL. (${String(conf.github.newIssuesURL)}).`;
+      rejectGithubPromise(msg);
+      return;
+    }
   } else {
     newIssuesURL = new URL("./new/choose", issueBase).href;
   }

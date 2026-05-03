@@ -273,8 +273,11 @@ function createIssueSummaryEntry(l10nIssue, report, id, ghIssue) {
     ? html`<span style="text-transform: none">: ${report.title}</span>`
     : "";
   const isClosed = ghIssue?.state === "CLOSED";
+  const closedIndicator = isClosed
+    ? html`<span class="issue-status"> (Closed)</span>`
+    : null;
   return html`<li class="${isClosed ? "closed" : null}">
-    <a href="${`#${id}`}">${issueNumberText}</a>${title}
+    <a href="${`#${id}`}">${issueNumberText}</a>${title}${closedIndicator}
   </li>`;
 }
 
