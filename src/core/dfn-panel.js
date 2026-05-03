@@ -84,7 +84,8 @@ function createPanel(dfn) {
 function linkingTermsToHTML(dfn) {
   const { lt } = dfn.dataset;
   if (!lt) return null;
-  const terms = lt.split("|").filter(t => t !== norm(dfn.textContent));
+  const normText = norm(dfn.textContent).toLowerCase();
+  const terms = lt.split("|").filter(t => t.toLowerCase() !== normText);
   if (!terms.length) return null;
   return html`<p class="dfn-panel-lt">
     <b>Linking terms:</b> ${terms.join(", ")}

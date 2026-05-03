@@ -716,4 +716,31 @@ describe("Core — Definitions", () => {
     expect(codeLink).toBeTruthy();
     expect(codeLink.querySelector("code")).toBeTruthy();
   });
+
+  it("auto-sets noexport for dfns in informative sections", async () => {
+    const body = `
+      <section>
+        <h2>Normative</h2>
+        <p><dfn id="norm-dfn">normative term</dfn></p>
+      </section>
+      <section class="informative">
+        <h2>Informative</h2>
+        <p><dfn id="info-dfn">informative term</dfn></p>
+        <p><dfn id="info-export" class="export">forced export</dfn></p>
+      </section>
+      <section id="conformance"></section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+
+    const normDfn = doc.getElementById("norm-dfn");
+    expect(normDfn.dataset.noexport).toBeUndefined();
+
+    const infoDfn = doc.getElementById("info-dfn");
+    expect(infoDfn.dataset.noexport).toBe("");
+
+    const infoExport = doc.getElementById("info-export");
+    expect(infoExport.dataset.export).toBe("");
+    expect(infoExport.dataset.noexport).toBeUndefined();
+  });
 });
