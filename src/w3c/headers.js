@@ -466,7 +466,10 @@ export async function run(conf) {
     const msg = "At least one editor is required.";
     const hint = docLink`Add one or more editors using the ${"[editors]"} configuration option.`;
     showError(msg, name, { hint });
-  } else if (editors.length && conf.isRecTrack) {
+  } else if (
+    editors.length &&
+    (conf.isRecTrack || conf.isNote || conf.isRegistry)
+  ) {
     // check that every editor has w3cid
     editors.forEach((editor, i) => {
       if (editor.w3cid) return;
