@@ -33,8 +33,9 @@ export function run() {
   const summaryItems = bpSummary ? document.createElement("ul") : null;
   [...bps].forEach((bp, num) => {
     const id = addId(bp, "bp");
+    const label = bp.dataset.label || l10n.best_practice;
     const localizedBpName = html`<a class="marker self-link" href="${`#${id}`}"
-      ><bdi lang="${lang}">${l10n.best_practice}${num + 1}</bdi></a
+      ><bdi lang="${lang}">${label}${num + 1}</bdi></a
     >`;
 
     // Make the summary items, if we have a summary
@@ -57,7 +58,8 @@ export function run() {
   });
   if (bps.length) {
     if (bpSummary) {
-      bpSummary.appendChild(html`<h1>Best Practices Summary</h1>`);
+      const summaryLabel = bpSummary.dataset.label || "Best Practices Summary";
+      bpSummary.appendChild(html`<h1>${summaryLabel}</h1>`);
       if (summaryItems) bpSummary.appendChild(summaryItems);
     }
   } else if (bpSummary) {
