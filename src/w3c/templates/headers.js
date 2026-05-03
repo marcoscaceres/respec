@@ -362,7 +362,7 @@ export default (conf, options) => {
           : ""}
         ${conf.errata
           ? html`<dt>Errata:</dt>
-              <dd><a href="${conf.errata}">Errata exists</a>.</dd>`
+              <dd><a href="${conf.errata}">Check for errata</a>.</dd>`
           : ""}
         ${conf.otherLinks ? conf.otherLinks.map(showLink) : ""}
       </dl>
