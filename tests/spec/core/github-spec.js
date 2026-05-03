@@ -105,6 +105,23 @@ describe("Core - Github", () => {
       const { respecConfig: conf } = doc.defaultView;
       expect(conf.edDraftURI).toBe("");
     });
+    it("supports custom newIssuesURL", async () => {
+      const opts = {
+        config: Object.assign(makeBasicConfig(), {
+          github: {
+            repoURL: "https://github.com/speced/respec/",
+            newIssuesURL: "https://github.com/speced/respec/issues/new",
+          },
+        }),
+        body: makeDefaultBody(),
+      };
+      delete opts.config.edDraftURI;
+      const doc = await makeRSDoc(opts);
+      const { respecConfig: conf } = doc.defaultView;
+      expect(conf.github.newIssuesURL).toBe(
+        "https://github.com/speced/respec/issues/new"
+      );
+    });
     it("normalizes github object with custom pullsURL and commitHistoryURL", async () => {
       const opts = {
         config: Object.assign(makeBasicConfig(), {
