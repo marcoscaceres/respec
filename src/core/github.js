@@ -166,8 +166,8 @@ export async function run(conf) {
     }
   }
 
+  /** @type {Record<string, any>} */
   const newProps = {
-    edDraftURI: `https://${org.toLowerCase()}.github.io/${repo}/`,
     githubToken: undefined,
     githubUser: undefined,
     issueBase,
@@ -176,6 +176,9 @@ export async function run(conf) {
     pullBase: pullsURL,
     shortName: repo,
   };
+  if (!conf.hasOwnProperty("edDraftURI")) {
+    newProps.edDraftURI = `https://${org.toLowerCase()}.github.io/${repo}/`;
+  }
   // Assign new properties, but retain existing ones
   let githubAPI = "https://respec.org/github";
   if (conf.githubAPI) {

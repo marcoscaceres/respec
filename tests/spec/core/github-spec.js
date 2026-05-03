@@ -81,6 +81,30 @@ describe("Core - Github", () => {
       const doc = await makeRSDoc(opts);
       doesntOverrideTest(doc);
     });
+    it("does not generate edDraftURI when explicitly set to null", async () => {
+      const opts = {
+        config: Object.assign(makeBasicConfig(), {
+          github: "speced/respec",
+          edDraftURI: null,
+        }),
+        body: makeDefaultBody(),
+      };
+      const doc = await makeRSDoc(opts);
+      const { respecConfig: conf } = doc.defaultView;
+      expect(conf.edDraftURI).toBeNull();
+    });
+    it("does not generate edDraftURI when explicitly set to empty string", async () => {
+      const opts = {
+        config: Object.assign(makeBasicConfig(), {
+          github: "speced/respec",
+          edDraftURI: "",
+        }),
+        body: makeDefaultBody(),
+      };
+      const doc = await makeRSDoc(opts);
+      const { respecConfig: conf } = doc.defaultView;
+      expect(conf.edDraftURI).toBe("");
+    });
     it("normalizes github object with custom pullsURL and commitHistoryURL", async () => {
       const opts = {
         config: Object.assign(makeBasicConfig(), {

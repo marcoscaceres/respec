@@ -344,6 +344,9 @@ function collectExternalTerms() {
     if (!elem.dataset.cite) {
       continue;
     }
+    if ("noindex" in elem.dataset) {
+      continue;
+    }
     const { cite, citeFrag, xrefType, linkType } = elem.dataset;
     if (!(xrefType || linkType || cite.includes("#") || citeFrag)) {
       // Not a reference to a definition
@@ -459,4 +462,8 @@ function cleanup(doc) {
   doc
     .querySelectorAll("#index-defined-here li[data-id]")
     .forEach(el => el.removeAttribute("data-id"));
+
+  doc
+    .querySelectorAll("a[data-noindex]")
+    .forEach(el => el.removeAttribute("data-noindex"));
 }

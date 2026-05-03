@@ -226,6 +226,28 @@ describe("Core — dfnPanel", () => {
     expect(panelDfnNotExported.querySelector(".dfn-exported")).toBeFalsy();
   });
 
+  it("shows linking terms when data-lt differs from text content", async () => {
+    const body = `
+      <section>
+        <h2>Terms</h2>
+        <p><dfn id="test-lt" data-lt="alias|another alias">term</dfn></p>
+        <p><dfn id="test-no-lt">no aliases</dfn></p>
+        <p>[=term=] [=no aliases=]</p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+
+    const panelWithLt = doc.getElementById(getPanelId("test-lt"));
+    const ltSection = panelWithLt.querySelector(".dfn-panel-lt");
+    expect(ltSection).toBeTruthy();
+    expect(ltSection.textContent).toContain("alias");
+    expect(ltSection.textContent).toContain("another alias");
+
+    const panelWithoutLt = doc.getElementById(getPanelId("test-no-lt"));
+    expect(panelWithoutLt.querySelector(".dfn-panel-lt")).toBeNull();
+  });
+
   it("renders a link to jump to IDL block", async () => {
     const body = `
       <section data-dfn-for="Foo">

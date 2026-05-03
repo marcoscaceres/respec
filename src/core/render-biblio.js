@@ -261,6 +261,7 @@ function stringifyReference(ref) {
   if (ref.publisher) {
     output = `${output} ${endWithDot(ref.publisher)} `;
   }
+  if (ref.pages) output += `pp. ${ref.pages}. `;
   if (ref.date) output += `${ref.date}. `;
   if (ref.status) output += `${REF_STATUSES.get(ref.status) || ref.status}. `;
   if (ref.href) output += `URL: <a href="${ref.href}">${ref.href}</a>`;

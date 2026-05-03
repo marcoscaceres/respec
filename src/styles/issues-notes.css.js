@@ -29,6 +29,17 @@ span.warning {
   font-size: smaller;
 }
 
+#issue-summary li.closed {
+  text-decoration: line-through;
+}
+
+#issue-summary li.closed::after {
+  content: " (Closed)";
+  font-size: smaller;
+  text-decoration: none;
+  display: inline;
+}
+
 .warning {
   border-color: #f11;
   border-color: var(--warning-border, #f11);

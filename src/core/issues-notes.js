@@ -160,7 +160,9 @@ function handleIssues(ins, ghIssues, conf) {
             report.title = ghIssue.title;
           }
         }
-        issueList.append(createIssueSummaryEntry(l10n.issue, report, div.id));
+        issueList.append(
+          createIssueSummaryEntry(l10n.issue, report, div.id, ghIssue)
+        );
       }
       title.textContent = text;
       if (report.title) {
@@ -261,15 +263,19 @@ function linkToIssueTracker(dataNum, conf, { isFeatureAtRisk = false } = {}) {
  * @param {string} l10nIssue
  * @param {Report} report
  * @param {string} id
+ * @param {GitHubIssue} [ghIssue]
  */
-function createIssueSummaryEntry(l10nIssue, report, id) {
+function createIssueSummaryEntry(l10nIssue, report, id, ghIssue) {
   const issueNumberText = `${l10nIssue}${
     report.number ? ` ${report.number}` : ""
   }`;
   const title = report.title
     ? html`<span style="text-transform: none">: ${report.title}</span>`
     : "";
-  return html`<li><a href="${`#${id}`}">${issueNumberText}</a>${title}</li>`;
+  const isClosed = ghIssue?.state === "CLOSED";
+  return html`<li class="${isClosed ? "closed" : null}">
+    <a href="${`#${id}`}">${issueNumberText}</a>${title}
+  </li>`;
 }
 
 /**
