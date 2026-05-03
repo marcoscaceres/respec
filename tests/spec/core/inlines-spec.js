@@ -696,4 +696,18 @@ describe("Core - Inlines", () => {
       withoutForA.getAttribute("href")
     );
   });
+
+  it("links [= event =] dfns via inline anchor syntax", async () => {
+    const body = `
+      <section>
+        <p><dfn data-dfn-type="event" data-dfn-for="Qux">bar</dfn></p>
+        <p id="link">[= Qux/bar =]</p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+    const link = doc.querySelector("#link a");
+    expect(link).toBeTruthy();
+    expect(link.getAttribute("href")).toContain("#dfn-bar");
+  });
 });
