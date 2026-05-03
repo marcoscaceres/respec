@@ -129,7 +129,11 @@ function defineIdlName(escaped, data, parent) {
   });
   const linkType = getDfnType(data.type);
   if (dfn) {
-    if (data.partial && !dfn.dataset.cite) {
+    if (
+      data.partial &&
+      !dfn.dataset.cite &&
+      !dfn.dataset.hasOwnProperty("idl")
+    ) {
       const msg = `Found a \`<dfn>\` for "${name}", but the IDL declares it as a \`partial\` ${data.type}.`;
       const hint = docLink`Remove the \`<dfn>\` (partials don't define the ${data.type}) or use ${"[data-cite]"} to reference the defining spec.`;
       showWarning(msg, pluginName, { elements: [dfn], hint });
