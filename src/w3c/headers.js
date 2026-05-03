@@ -148,6 +148,7 @@ export const status2text = {
   "CG-FINAL": "Final Community Group Report",
   "BG-DRAFT": "Draft Business Group Report",
   "BG-FINAL": "Final Business Group Report",
+  charter: "Charter",
 };
 const status2long = {
   ...status2text,
@@ -205,6 +206,7 @@ export const noTrackStatus = [
   "finding",
   "MO",
   "unofficial",
+  "charter",
 ];
 /** @type {Map<string, LicenseInfo>} */
 export const licenses = new Map([
