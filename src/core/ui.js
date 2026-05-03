@@ -49,6 +49,7 @@ const menu = html`<ul
 ></ul>`;
 const closeButton = html`<button
   class="close-button"
+  aria-label="Close"
   onclick=${() => ui.closeModal()}
   title="Close"
 >
