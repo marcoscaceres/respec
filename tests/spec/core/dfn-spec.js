@@ -690,4 +690,30 @@ describe("Core — Definitions", () => {
       expect(desc2.dataset.defines).toBe("#dfn-different-convention");
     });
   });
+
+  it("converts backtick-wrapped dfn text to code element", async () => {
+    const body = `
+      <section>
+        <h2>Terms</h2>
+        <p><dfn>\`codeTerm\`</dfn> is a code thing.</p>
+        <p><dfn>normalTerm</dfn> is a normal thing.</p>
+        <p>[=codeTerm=] and [=normalTerm=]</p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+
+    const codeDfn = doc.querySelector("dfn#dfn-codeterm");
+    expect(codeDfn).toBeTruthy();
+    expect(codeDfn.querySelector("code")).toBeTruthy();
+    expect(codeDfn.querySelector("code").textContent).toBe("codeTerm");
+
+    const normalDfn = doc.querySelector("dfn#dfn-normalterm");
+    expect(normalDfn).toBeTruthy();
+    expect(normalDfn.querySelector("code")).toBeNull();
+
+    const codeLink = doc.querySelector("a[href='#dfn-codeterm']");
+    expect(codeLink).toBeTruthy();
+    expect(codeLink.querySelector("code")).toBeTruthy();
+  });
 });
