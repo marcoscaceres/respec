@@ -45,6 +45,13 @@ const localizationStrings = {
     dfnOf: "definición de",
     definesFollowing: "define lo siguiente:",
   },
+  fr: {
+    heading: "Index",
+    headingExternal: "Termes définis par référence",
+    headingLocal: "Termes définis par cette spécification",
+    dfnOf: "définition de",
+    definesFollowing: "définit les termes suivants :",
+  },
   ja: {
     heading: "索引",
     headingExternal: "参照によって定義された用語",

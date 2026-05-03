@@ -50,6 +50,15 @@ const localizationStrings = {
     no_issues_in_spec: "No hay problemas enumerados en esta especificación.",
     warning: "Aviso",
   },
+  fr: {
+    editors_note: "Note d'édition",
+    feature_at_risk: "(Fonctionnalité à risque) Problème",
+    issue: "Problème",
+    issue_summary: "Résumé des problèmes",
+    no_issues_in_spec: "Aucun problème n'est listé dans cette spécification.",
+    note: "Note",
+    warning: "Avertissement",
+  },
   de: {
     editors_note: "Redaktioneller Hinweis",
     issue: "Frage",

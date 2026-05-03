@@ -49,6 +49,11 @@ const localizationStrings = {
     file_a_bug: "Nota un bug",
     participate: "Participe:",
   },
+  fr: {
+    file_a_bug: "Signaler un problème",
+    participate: "Participer :",
+    commit_history: "Historique des modifications",
+  },
   de: {
     commit_history: "Revisionen",
     file_a_bug: "Fehler melden",

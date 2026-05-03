@@ -34,6 +34,12 @@ const localizationStrings = {
     references: "Referencias",
     reference_not_found: "Referencia no encontrada.",
   },
+  fr: {
+    info_references: "Références informatives",
+    norm_references: "Références normatives",
+    references: "Références",
+    reference_not_found: "Référence non trouvée.",
+  },
   ja: {
     info_references: "参照用参考文献",
     norm_references: "規範的参考文献",
