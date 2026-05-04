@@ -284,6 +284,10 @@ describe("Core — Issues and Notes", () => {
     const issueDiv1 = doc.getElementById("this-should-exist");
     expect(issueDiv1).toBeTruthy();
     expect(issueDiv1.classList).toContain("closed");
+    // The closed issue box should have a localized "(Closed)" indicator
+    const issueBoxStatus = issueDiv1.querySelector(".issue-status");
+    expect(issueBoxStatus).toBeTruthy();
+    expect(issueBoxStatus.textContent).toContain("Closed");
 
     const issueDiv2 = doc.getElementById("issue-container-number-1540");
     expect(issueDiv2).toBeTruthy();
@@ -295,6 +299,23 @@ describe("Core — Issues and Notes", () => {
       "[href='#issue-container-number-1540']"
     );
     expect(textContent).toBe("Issue 1540");
+
+    // Verify closed issue appears in summary with closed class and status
+    const closedSummaryItem = summarySection
+      .querySelector("a[href='#this-should-exist']")
+      .closest("li");
+    expect(closedSummaryItem.classList).toContain("closed");
+    const closedStatus = closedSummaryItem.querySelector(".issue-status");
+    expect(closedStatus).toBeTruthy();
+    expect(closedStatus.textContent).toContain("Closed");
+
+    // Verify open issue in summary does NOT have closed class
+    const openSummaryItem = summarySection
+      .querySelector("a[href='#issue-container-number-1540']")
+      .closest("li");
+    expect(openSummaryItem.classList).not.toContain("closed");
+    expect(openSummaryItem.querySelector(".issue-status")).toBeNull();
+
     const issueDiv404 = doc.getElementById("this-is-404");
     expect(issueDiv404).toBeTruthy();
     expect(issueDiv404.querySelector("div:not(.issue-title)").textContent).toBe(
