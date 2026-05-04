@@ -24,8 +24,17 @@ span.warning {
   text-decoration: line-through;
 }
 
-.issue.closed span.issue-number::after {
-  content: " (Closed)";
+.issue.closed .issue-status {
+  font-size: smaller;
+  text-decoration: none;
+}
+
+#issue-summary li.closed {
+  text-decoration: line-through;
+}
+
+#issue-summary li.closed .issue-status {
+  text-decoration: none;
   font-size: smaller;
 }
 

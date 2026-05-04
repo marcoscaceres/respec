@@ -18,6 +18,7 @@ export const name = "core/issues-notes";
 
 const localizationStrings = {
   en: {
+    closed: "Closed",
     editors_note: "Editor's note",
     feature_at_risk: "(Feature at Risk) Issue",
     issue: "Issue",
@@ -49,6 +50,16 @@ const localizationStrings = {
     note: "Nota",
     no_issues_in_spec: "No hay problemas enumerados en esta especificación.",
     warning: "Aviso",
+  },
+  fr: {
+    closed: "Fermé",
+    editors_note: "Note d'édition",
+    feature_at_risk: "(Fonctionnalité à risque) Problème",
+    issue: "Problème",
+    issue_summary: "Résumé des problèmes",
+    no_issues_in_spec: "Aucun problème n'est listé dans cette spécification.",
+    note: "Note",
+    warning: "Avertissement",
   },
   de: {
     editors_note: "Redaktioneller Hinweis",
@@ -160,7 +171,9 @@ function handleIssues(ins, ghIssues, conf) {
             report.title = ghIssue.title;
           }
         }
-        issueList.append(createIssueSummaryEntry(l10n.issue, report, div.id));
+        issueList.append(
+          createIssueSummaryEntry(l10n.issue, report, div.id, ghIssue)
+        );
       }
       title.textContent = text;
       if (report.title) {
@@ -169,6 +182,9 @@ function handleIssues(ins, ghIssues, conf) {
         const labels = ghIssue ? ghIssue.labels : [];
         if (ghIssue && ghIssue.state === "CLOSED") {
           div.classList.add("closed");
+          title.append(
+            html`<span class="issue-status"> (${l10n.closed})</span>`
+          );
         }
         titleParent.append(createLabelsGroup(labels, report.title, repoURL));
       }
@@ -261,15 +277,22 @@ function linkToIssueTracker(dataNum, conf, { isFeatureAtRisk = false } = {}) {
  * @param {string} l10nIssue
  * @param {Report} report
  * @param {string} id
+ * @param {GitHubIssue} [ghIssue]
  */
-function createIssueSummaryEntry(l10nIssue, report, id) {
+function createIssueSummaryEntry(l10nIssue, report, id, ghIssue) {
   const issueNumberText = `${l10nIssue}${
     report.number ? ` ${report.number}` : ""
   }`;
   const title = report.title
     ? html`<span style="text-transform: none">: ${report.title}</span>`
     : "";
-  return html`<li><a href="${`#${id}`}">${issueNumberText}</a>${title}</li>`;
+  const isClosed = ghIssue?.state === "CLOSED";
+  const closedIndicator = isClosed
+    ? html`<span class="issue-status"> (${l10n.closed})</span>`
+    : null;
+  return html`<li class="${isClosed ? "closed" : null}">
+    <a href="${`#${id}`}">${issueNumberText}</a>${title}${closedIndicator}
+  </li>`;
 }
 
 /**
