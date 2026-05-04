@@ -121,6 +121,10 @@ describe("Core - Github", () => {
       expect(conf.github.newIssuesURL).toBe(
         "https://github.com/speced/respec/issues/new"
       );
+      const fileABug = [...doc.querySelectorAll("dd a")].find(
+        a => a.href === "https://github.com/speced/respec/issues/new"
+      );
+      expect(fileABug).toBeTruthy();
     });
     it("normalizes github object with custom pullsURL and commitHistoryURL", async () => {
       const opts = {
