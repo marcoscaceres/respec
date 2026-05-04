@@ -232,7 +232,8 @@ describe("Core — dfnPanel", () => {
         <h2>Terms</h2>
         <p><dfn id="test-lt" data-lt="alias|another alias">term</dfn></p>
         <p><dfn id="test-no-lt">no aliases</dfn></p>
-        <p>[=term=] [=no aliases=]</p>
+        <p><dfn id="test-spaced" data-lt=" spaced | spaced ">spaced term</dfn></p>
+        <p>[=term=] [=no aliases=] [=spaced term=]</p>
       </section>
     `;
     const ops = makeStandardOps(null, body);
@@ -246,6 +247,11 @@ describe("Core — dfnPanel", () => {
 
     const panelWithoutLt = doc.getElementById(getPanelId("test-no-lt"));
     expect(panelWithoutLt.querySelector(".dfn-panel-lt")).toBeNull();
+
+    const panelSpaced = doc.getElementById(getPanelId("test-spaced"));
+    const spacedLt = panelSpaced.querySelector(".dfn-panel-lt");
+    expect(spacedLt).toBeTruthy();
+    expect(spacedLt.textContent).toContain("spaced");
   });
 
   it("renders a link to jump to IDL block", async () => {

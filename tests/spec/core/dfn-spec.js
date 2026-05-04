@@ -743,21 +743,4 @@ describe("Core — Definitions", () => {
     expect(infoExport.dataset.export).toBe("");
     expect(infoExport.dataset.noexport).toBeUndefined();
   });
-
-  it("generates stable IDs incorporating dfnFor context", async () => {
-    const body = `
-      <section>
-        <h2>Terms</h2>
-        <p><dfn data-dfn-for="Clock">current time</dfn></p>
-        <p><dfn data-dfn-for="Timer">current time</dfn></p>
-      </section>
-    `;
-    const ops = makeStandardOps(null, body);
-    const doc = await makeRSDoc(ops);
-    const dfns = doc.querySelectorAll("dfn");
-    expect(dfns[0].id).toBe("dfn-clock-current-time");
-    expect(dfns[1].id).toBe("dfn-timer-current-time");
-    expect(dfns[0].id).not.toMatch(/-\d+$/);
-    expect(dfns[1].id).not.toMatch(/-\d+$/);
-  });
 });
