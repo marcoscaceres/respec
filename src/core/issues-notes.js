@@ -18,6 +18,7 @@ export const name = "core/issues-notes";
 
 const localizationStrings = {
   en: {
+    closed: "Closed",
     editors_note: "Editor's note",
     feature_at_risk: "(Feature at Risk) Issue",
     issue: "Issue",
@@ -51,6 +52,7 @@ const localizationStrings = {
     warning: "Aviso",
   },
   fr: {
+    closed: "Fermé",
     editors_note: "Note d'édition",
     feature_at_risk: "(Fonctionnalité à risque) Problème",
     issue: "Problème",
@@ -283,7 +285,7 @@ function createIssueSummaryEntry(l10nIssue, report, id, ghIssue) {
     : "";
   const isClosed = ghIssue?.state === "CLOSED";
   const closedIndicator = isClosed
-    ? html`<span class="issue-status"> (Closed)</span>`
+    ? html`<span class="issue-status"> (${l10n.closed})</span>`
     : null;
   return html`<li class="${isClosed ? "closed" : null}">
     <a href="${`#${id}`}">${issueNumberText}</a>${title}${closedIndicator}

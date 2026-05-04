@@ -36,7 +36,8 @@ export function run() {
   const summaryItems = bpSummary ? document.createElement("ul") : null;
   [...bps].forEach((bp, num) => {
     const id = addId(bp, "bp");
-    const label = bp.dataset.label || l10n.best_practice;
+    const rawLabel = bp.dataset.label || l10n.best_practice;
+    const label = `${rawLabel.trimEnd()} `;
     const localizedBpName = html`<a class="marker self-link" href="${`#${id}`}"
       ><bdi lang="${lang}">${label}${num + 1}</bdi></a
     >`;
