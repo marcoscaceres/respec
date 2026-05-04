@@ -673,4 +673,42 @@ describe("Core - Inlines", () => {
     expect(withSpace.querySelector("a")).toBeNull();
     expect(withSpace.textContent.trim()).toBe("{{ Window }}");
   });
+
+  it("resolves {{[[internal slot]]}} from ancestor data-link-for context", async () => {
+    const body = `
+      <section data-dfn-for="Baz" data-link-for="Baz">
+        <pre class="idl">
+          [Exposed=Window]
+          interface Baz {};
+        </pre>
+        <dfn>[[\\internal slot]]</dfn>
+        <p id="with-for">{{Baz/[[internal slot]]}}</p>
+        <p id="without-for">{{[[internal slot]]}}</p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+    const withForA = doc.querySelector("#with-for a");
+    const withoutForA = doc.querySelector("#without-for a");
+    expect(withForA).toBeTruthy();
+    expect(withoutForA).toBeTruthy();
+    expect(withForA.getAttribute("href")).toBe(
+      withoutForA.getAttribute("href")
+    );
+  });
+
+  it("links [= event =] dfns via inline anchor syntax", async () => {
+    const body = `
+      <section>
+        <p><dfn data-dfn-type="event" data-dfn-for="Qux">bar</dfn></p>
+        <p id="link">[= Qux/bar =]</p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+    const link = doc.querySelector("#link a");
+    expect(link).toBeTruthy();
+    const dfn = doc.querySelector("dfn");
+    expect(link.getAttribute("href")).toBe(`#${dfn.id}`);
+  });
 });

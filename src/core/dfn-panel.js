@@ -72,11 +72,26 @@ function createPanel(dfn) {
         ${dfnExportedMarker(dfn)} ${idlMarker(dfn, links)}
         ${cddlMarker(dfn, links)}
       </div>
+      ${linkingTermsToHTML(dfn)}
       <p><b>Referenced in:</b></p>
       ${referencesToHTML(id, links)}
     </div>
   `;
   return panel;
+}
+
+/** @param {HTMLElement} dfn */
+function linkingTermsToHTML(dfn) {
+  const { lt } = dfn.dataset;
+  if (!lt) return null;
+  const normText = norm(dfn.textContent).toLowerCase();
+  const terms = [...new Set(lt.split("|").map(norm).filter(Boolean))].filter(
+    t => t.toLowerCase() !== normText
+  );
+  if (!terms.length) return null;
+  return html`<p class="dfn-panel-lt">
+    <b>Linking terms:</b> ${terms.join(", ")}
+  </p>`;
 }
 
 /** @param {HTMLElement} dfn */
