@@ -1,6 +1,11 @@
 "use strict";
 
-import { flushIframes, makeRSDoc, makeStandardOps } from "../SpecHelper.js";
+import {
+  flushIframes,
+  makeBasicConfig,
+  makeRSDoc,
+  makeStandardOps,
+} from "../SpecHelper.js";
 
 describe("Core - Tables", () => {
   afterAll(flushIframes);
@@ -68,5 +73,26 @@ describe("Core - Tables", () => {
     expect(listOfTablesItems).toHaveSize(2);
     expect(tableLinks[0].textContent).toBe("Table 1 test 1");
     expect(tableLinks[1].textContent).toBe("Table 2 test 2");
+  });
+
+  it("localizes table labels and list of tables to French", async () => {
+    const ops = {
+      config: makeBasicConfig(),
+      htmlAttrs: {
+        lang: "fr",
+      },
+      body: `
+      <table class='numbered'>
+        <caption>test 1</caption>
+      </table>
+      <section id='list-of-tables'></section>`,
+    };
+    const doc = await makeRSDoc(ops);
+    expect(doc.documentElement.lang).toBe("fr");
+    const caption = doc.querySelector("table caption");
+    expect(caption.textContent).toContain("Table");
+    const listOfTables = doc.getElementById("list-of-tables");
+    const listOfTablesHeader = listOfTables.querySelector("h2");
+    expect(listOfTablesHeader.textContent).toContain("Liste des tables");
   });
 });

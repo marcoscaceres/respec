@@ -62,6 +62,18 @@ describe("W3C — Abstract", () => {
     expect(abs.querySelector("h2").textContent).toBe("要約");
   });
 
+  it("localizes the abstract heading to French", async () => {
+    const ops = makeStandardOps();
+    ops.htmlAttrs = {
+      lang: "fr",
+    };
+    ops.abstract = `<p>test abstract</p>`;
+    const doc = await makeRSDoc(ops);
+    const abs = doc.getElementById("abstract");
+    expect(doc.documentElement.lang).toBe("fr");
+    expect(abs.querySelector("h2").textContent).toBe("Résumé");
+  });
+
   it("supports abstracts created from markdown documents", async () => {
     const doc = await makeRSDoc(null, "spec/w3c/abstract-markdown.html");
     const abs = doc.getElementById("abstract");

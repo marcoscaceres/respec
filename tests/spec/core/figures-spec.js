@@ -145,4 +145,26 @@ describe("Core - Figures", () => {
     expect(doc.documentElement.lang).toBe("nl");
     expect(textContent).toContain("Lijst met figuren");
   });
+
+  it("localizes figure labels and list of figures to French", async () => {
+    const ops = {
+      config: makeBasicConfig(),
+      htmlAttrs: {
+        lang: "fr",
+      },
+      body: `
+      <section id="tof" class="informative appendix"></section>
+      <section>
+        <figure id='figure'> <img src='img' alt=''>
+          <figcaption>Example Figure</figcaption>
+        </figure>
+      </section>`,
+    };
+    const doc = await makeRSDoc(ops);
+    expect(doc.documentElement.lang).toBe("fr");
+    const caption = doc.querySelector("figcaption");
+    expect(caption.textContent).toContain("Figure");
+    const { textContent } = doc.querySelector("#tof h2");
+    expect(textContent).toContain("Liste des figures");
+  });
 });

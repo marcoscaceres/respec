@@ -126,4 +126,25 @@ describe("W3C — Conformance", () => {
     expect(conformance.textContent).not.toContain("@param");
     expect(conformance.textContent).not.toContain("*/");
   });
+
+  it("localizes the conformance heading to French", async () => {
+    const ops = {
+      config: makeBasicConfig(),
+      htmlAttrs: {
+        lang: "fr",
+      },
+      body: `${makeDefaultBody()}<section id='conformance'>
+          <p>CONFORMANCE</p>
+        </section>
+        <section><h2>my section</h2>
+          <p>Terms MUST be used.</p>
+        </section>`,
+    };
+    const doc = await makeRSDoc(ops);
+    const conformance = doc.getElementById("conformance");
+    expect(doc.documentElement.lang).toBe("fr");
+    expect(conformance.querySelector("h2").textContent).toMatch(
+      /\d+\.\s+Conformité/
+    );
+  });
 });
