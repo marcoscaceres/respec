@@ -1,6 +1,11 @@
 "use strict";
 
-import { flushIframes, makeRSDoc, makeStandardOps } from "../SpecHelper.js";
+import {
+  flushIframes,
+  makeRSDoc,
+  makeStandardOps,
+  warningFilters,
+} from "../SpecHelper.js";
 
 describe("Core - Inlines", () => {
   afterAll(flushIframes);
@@ -696,5 +701,56 @@ describe("Core - Inlines", () => {
     const withSpace = doc.getElementById("with-space");
     expect(withSpace.querySelector("a")).toBeNull();
     expect(withSpace.textContent.trim()).toBe("{{ Window }}");
+  });
+
+  it("processes [: Header :] shorthand for HTTP headers", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="http-header">Content-Type</dfn>
+        <dfn data-dfn-type="http-header">Accept</dfn>
+        <p id="basic">[: Content-Type :]</p>
+        <p id="display">[: Accept|the Accept header :]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+
+    const basic = doc.querySelector("#basic code a");
+    expect(basic).toBeTruthy();
+    expect(basic.dataset.linkType).toBe("http-header");
+    expect(basic.textContent).toBe("Content-Type");
+
+    const display = doc.querySelector("#display code a");
+    expect(display).toBeTruthy();
+    expect(display.dataset.linkType).toBe("http-header");
+    expect(display.textContent).toBe("the Accept header");
+    expect(display.dataset.lt).toBe("Accept");
+  });
+
+  it("warns on invalid !!type in [: :] shorthand", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="http-header">Content-Type</dfn>
+        <p id="test">[: Content-Type!!nonsense :]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const link = doc.querySelector("#test code a");
+    expect(link).toBeTruthy();
+    expect(link.dataset.linkType).toBe("http-header");
+    const warnings = warningFilters.filter("core/inlines")(doc);
+    expect(warnings).toHaveSize(1);
+    expect(warnings[0].message).toContain("!!nonsense");
+  });
+
+  it("warns on empty [: :] shorthand", async () => {
+    const body = `
+      <section>
+        <p id="test">[: :]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const warnings = warningFilters.filter("core/inlines")(doc);
+    expect(warnings).toHaveSize(1);
+    expect(warnings[0].message).toContain("Empty");
   });
 });
