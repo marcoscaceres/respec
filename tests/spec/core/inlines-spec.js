@@ -627,6 +627,54 @@ describe("Core - Inlines", () => {
     expect(warnings[0].message).toContain("!!nonsense");
   });
 
+  it("supports |visibleText for non-method IDL links via !!type|text syntax", async () => {
+    const body = `
+      <section data-dfn-for="Foo">
+        <h2><dfn>Foo</dfn></h2>
+        <dfn data-dfn-for="Foo">bar</dfn>
+        <dfn data-dfn-type="event" data-dfn-for="Foo">change</dfn>
+        <p id="attr-text">{{ Foo/bar!!attribute|the bar attribute }}</p>
+        <p id="event-text">{{ Foo/change!!event|the change event }}</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+
+    const attrAnchor = doc.querySelector("#attr-text a");
+    expect(attrAnchor)
+      .withContext(doc.querySelector("#attr-text").innerHTML)
+      .toBeTruthy();
+    expect(attrAnchor.textContent).toBe("the bar attribute");
+    expect(attrAnchor.dataset.xrefType).toBe("attribute");
+    expect(attrAnchor.dataset.linkFor).toBe("Foo");
+
+    const eventAnchor = doc.querySelector("#event-text a");
+    expect(eventAnchor)
+      .withContext(doc.querySelector("#event-text").innerHTML)
+      .toBeTruthy();
+    expect(eventAnchor.textContent).toBe("the change event");
+    expect(eventAnchor.dataset.xrefType).toBe("event");
+    expect(eventAnchor.dataset.linkFor).toBe("Foo");
+  });
+
+  it("supports |visibleText for non-method IDL links via bare Foo/bar|text syntax", async () => {
+    const body = `
+      <section data-dfn-for="Foo">
+        <h2><dfn>Foo</dfn></h2>
+        <dfn data-dfn-for="Foo">bar</dfn>
+        <p id="no-type-text">{{ Foo/bar|the bar }}</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+
+    const anchor = doc.querySelector("#no-type-text a");
+    expect(anchor)
+      .withContext(doc.querySelector("#no-type-text").innerHTML)
+      .toBeTruthy();
+    expect(anchor.textContent).toBe("the bar");
+    expect(anchor.dataset.xrefType).toBe("attribute|dict-member|const");
+    expect(anchor.dataset.linkFor).toBe("Foo");
+  });
+
   it("processes {{ forContext/term }} IDL", async () => {
     const body = `
       <section>

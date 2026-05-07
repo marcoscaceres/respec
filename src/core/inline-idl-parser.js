@@ -110,15 +110,22 @@ const isProbablySlotRegex = /\[\[.+\]\]/;
 
 /**
  * @param {string} str
- * @returns {{ tokens: InlineIdl[], typeHint: string }}
+ * @returns {{ tokens: InlineIdl[], typeHint: string, visibleText: string }}
  */
 function parseInlineIDL(str) {
   // Extract !!type suffix for type disambiguation (Bikeshed compat)
   let typeHint = "";
+  let visibleText = "";
   if (str.includes("!!")) {
     [str, typeHint] = str.split("!!", 2);
     str = str.trim();
     typeHint = typeHint.trim();
+    // Extract |visibleText from typeHint (e.g., !!attribute|the bar attribute)
+    if (typeHint.includes("|")) {
+      [typeHint, visibleText] = typeHint.split("|", 2);
+      typeHint = typeHint.trim();
+      visibleText = visibleText.trim();
+    }
   }
   if (typeHint && !KNOWN_IDL_TYPES.has(typeHint)) {
     const valid = [...KNOWN_IDL_TYPES].join(", ");
@@ -128,6 +135,12 @@ function parseInlineIDL(str) {
       "core/inline-idl-parser"
     );
     typeHint = "";
+  }
+  // For non-method terms, extract |visibleText from str (e.g., Foo/bar|the bar)
+  if (!visibleText && !str.includes("(") && str.includes("|")) {
+    [str, visibleText] = str.split("|", 2);
+    str = str.trim();
+    visibleText = visibleText.trim();
   }
 
   // If it's got [[ string ]], then split as an internal slot
@@ -257,7 +270,7 @@ function parseInlineIDL(str) {
     item.parent = list[i + 1] || null;
   });
   // return them in the order we found them...
-  return { tokens: results.reverse(), typeHint };
+  return { tokens: results.reverse(), typeHint, visibleText };
 }
 
 /**
@@ -318,18 +331,20 @@ function htmlArgMapper(str, i, array) {
  * Attribute: .identifier
  * @param {IdlAttribute} details
  * @param {string} [typeHint]
+ * @param {string} [visibleText]
  */
-function renderAttribute(details, typeHint) {
+function renderAttribute(details, typeHint, visibleText) {
   const { parent, identifier, renderParent } = details;
   const { identifier: linkFor } = parent || {};
   const xrefType = typeHint || "attribute|dict-member|const";
   const linkType = typeHint || "idl";
+  const displayText = visibleText || identifier;
   const element = html`${renderParent ? "." : ""}<a
       data-link-type="${linkType}"
       data-xref-type="${xrefType}"
       data-link-for="${linkFor}"
       data-xref-for="${linkFor}"
-      ><code>${identifier}</code></a
+      ><code>${displayText}</code></a
     >`;
   return element;
 }
@@ -428,7 +443,7 @@ export function idlStringToHtml(str) {
     });
     return el;
   }
-  const { tokens: results, typeHint } = parsed;
+  const { tokens: results, typeHint, visibleText } = parsed;
   const render = html(document.createDocumentFragment());
   const output = [];
   for (const details of results) {
@@ -439,7 +454,7 @@ export function idlStringToHtml(str) {
         break;
       }
       case "attribute":
-        output.push(renderAttribute(details, typeHint));
+        output.push(renderAttribute(details, typeHint, visibleText));
         break;
       case "internal-slot":
         output.push(renderInternalSlot(details));
