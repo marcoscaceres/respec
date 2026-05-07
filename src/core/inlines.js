@@ -23,6 +23,14 @@ export const name = "core/inlines";
 /** @type {Record<string, boolean>} */
 export const rfc2119Usage = {};
 
+const KNOWN_ELEMENT_TYPES = new Set([
+  "element",
+  "element-attr",
+  "attr-value",
+  "element-state",
+  "element-sub",
+]);
+
 /** @param {RegExp[]} regexes */
 const joinRegex = regexes => new RegExp(regexes.map(re => re.source).join("|"));
 
@@ -81,14 +89,42 @@ const inlineCddlReference = /(?:\{\^[^}^]+\^\})/; // {^cddl-type^}, {^type/key^}
  * @return {HTMLElement}
  */
 function inlineElementMatches(matched) {
-  const value = matched.slice(2, -2).trim();
+  let value = matched.slice(2, -2).trim();
+
+  let typeHint = "";
+  let displayText = "";
+  if (value.includes("!!")) {
+    [value, typeHint] = value.split("!!", 2);
+    value = value.trim();
+    typeHint = typeHint.trim();
+    if (typeHint.includes("|")) {
+      [typeHint, displayText] = typeHint.split("|", 2);
+      typeHint = typeHint.trim();
+      displayText = displayText.trim();
+    }
+  }
+  if (typeHint && !KNOWN_ELEMENT_TYPES.has(typeHint)) {
+    const valid = [...KNOWN_ELEMENT_TYPES].join(", ");
+    showWarning(
+      `Unrecognized type hint \`!!${typeHint}\` in \`[^ ${matched.slice(2, -2).trim()} ^]\`. ` +
+        `Valid types: ${valid}.`,
+      name
+    );
+    typeHint = "";
+  }
+
+  if (!displayText && value.includes("|")) {
+    [value, displayText] = value.split("|", 2);
+    value = value.trim();
+    displayText = displayText.trim();
+  }
+
   const [forPart, attribute, attrValue] = value
     .split("/", 3)
     .map(s => s && s.trim())
     .filter(s => !!s);
 
-  const [xrefType, xrefFor, textContent] = (() => {
-    // [^ /role ^], for example
+  const [inferredType, xrefFor, textContent] = (() => {
     const isGlobalAttr = value.startsWith("/");
     if (isGlobalAttr) {
       return ["element-attr", null, forPart];
@@ -100,13 +136,18 @@ function inlineElementMatches(matched) {
       return ["element", null, forPart];
     }
   })();
+
+  const xrefType = typeHint || inferredType;
+  const content = displayText || textContent;
+  const lt = displayText ? textContent : null;
   return html`<code
     ><a
       data-xref-type="${xrefType}"
       data-xref-for="${xrefFor}"
       data-link-type="${xrefType}"
       data-link-for="${xrefFor}"
-      >${textContent}</a
+      data-lt="${lt}"
+      >${content}</a
     ></code
   >`;
 }
