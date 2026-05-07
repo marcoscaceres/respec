@@ -543,6 +543,55 @@ describe("Core - Inlines", () => {
     );
   });
 
+  it("supports [= term!!type =] for dfn-type disambiguation", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="element">button</dfn>
+        <dfn>button</dfn>
+        <p id="element-link">[= button!!element =]</p>
+        <p id="dfn-link">[= button!!dfn =]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const elementLink = doc.querySelector("#element-link a");
+    expect(elementLink).toBeTruthy();
+    expect(elementLink.dataset.linkType).toBe("element");
+
+    const dfnLink = doc.querySelector("#dfn-link a");
+    expect(dfnLink).toBeTruthy();
+    expect(dfnLink.dataset.linkType).toBe("dfn");
+  });
+
+  it("supports [= For/term!!type =] with for context", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="element-attr" data-dfn-for="button">type</dfn>
+        <p id="test">[= button/type!!element-attr =]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const link = doc.querySelector("#test a");
+    expect(link).toBeTruthy();
+    expect(link.dataset.linkType).toBe("element-attr");
+    expect(link.dataset.linkFor).toBe("button");
+  });
+
+  it("warns on unrecognized !!type in [= =] links", async () => {
+    const body = `
+      <section>
+        <dfn>foo</dfn>
+        <p id="test">[= foo!!bogus =]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const link = doc.querySelector("#test a");
+    expect(link).toBeTruthy();
+    expect(link.dataset.linkType).toBe("dfn|abstract-op");
+    const warnings = warningFilters.filter("core/inlines")(doc);
+    expect(warnings).toHaveSize(1);
+    expect(warnings[0].message).toContain("!!bogus");
+  });
+
   it("links {{ Interface/event!!event }} to event-type definitions", async () => {
     const body = `
       <section data-dfn-for="ScreenOrientation">

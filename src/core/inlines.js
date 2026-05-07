@@ -23,6 +23,19 @@ export const name = "core/inlines";
 /** @type {Record<string, boolean>} */
 export const rfc2119Usage = {};
 
+const KNOWN_DFN_TYPES = new Set([
+  "dfn",
+  "abstract-op",
+  "element",
+  "element-attr",
+  "attr-value",
+  "element-state",
+  "http-header",
+  "permission",
+  "scheme",
+  "media-type",
+]);
+
 /** @param {RegExp[]} regexes */
 const joinRegex = regexes => new RegExp(regexes.map(re => re.source).join("|"));
 
@@ -264,14 +277,33 @@ function inlineVariableMatches(matched) {
 function inlineAnchorMatches(matched) {
   matched = matched.slice(2, -2); // Chop [= =]
   const parts = splitByFor(matched);
-  const [isFor, content] = parts.length === 2 ? parts : [null, parts[0]];
+  const [isFor, rawContent] = parts.length === 2 ? parts : [null, parts[0]];
+
+  let typeHint = "";
+  let content = rawContent;
+  if (rawContent.includes("!!")) {
+    [content, typeHint] = rawContent.split("!!", 2);
+    content = content.trim();
+    typeHint = typeHint.trim();
+  }
+  if (typeHint && !KNOWN_DFN_TYPES.has(typeHint)) {
+    const valid = [...KNOWN_DFN_TYPES].join(", ");
+    showWarning(
+      `Unrecognized type hint \`!!${typeHint}\` in \`[= ${matched} =]\`. ` +
+        `Valid types: ${valid}.`,
+      name
+    );
+    typeHint = "";
+  }
+
   const [linkingText, text] = content.includes("|")
     ? content.split("|", 2).map(s => s.trim())
     : [null, content];
   const processedContent = processInlineContent(text);
   const forContext = isFor ? norm(isFor) : null;
+  const linkType = typeHint || "dfn|abstract-op";
   return html`<a
-    data-link-type="dfn|abstract-op"
+    data-link-type="${linkType}"
     data-link-for="${forContext}"
     data-xref-for="${forContext}"
     data-lt="${linkingText}"
