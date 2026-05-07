@@ -1,6 +1,11 @@
 "use strict";
 
-import { flushIframes, makeRSDoc, makeStandardOps } from "../SpecHelper.js";
+import {
+  flushIframes,
+  makeRSDoc,
+  makeStandardOps,
+  warningFilters,
+} from "../SpecHelper.js";
 
 describe("Core - Inlines", () => {
   afterAll(flushIframes);
@@ -553,6 +558,24 @@ describe("Core - Inlines", () => {
     expect(anchor.dataset.xrefType).toBe("event");
     expect(anchor.dataset.linkFor).toBe("ScreenOrientation");
     expect(anchor.textContent).toBe("change");
+  });
+
+  it("warns and falls back to default on unrecognized !!type hint", async () => {
+    const body = `
+      <section data-dfn-for="Foo">
+        <h2><dfn>Foo</dfn></h2>
+        <dfn data-dfn-for="Foo">bar</dfn>
+        <p id="test">{{ Foo/bar!!nonsense }}</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const para = doc.getElementById("test");
+    const anchor = para.querySelector("a");
+    expect(anchor).withContext(para.innerHTML).toBeTruthy();
+    expect(anchor.dataset.xrefType).toBe("attribute|dict-member|const");
+    const warnings = warningFilters.filter("core/inline-idl-parser")(doc);
+    expect(warnings).toHaveSize(1);
+    expect(warnings[0].message).toContain("!!nonsense");
   });
 
   it("processes {{ forContext/term }} IDL", async () => {

@@ -2,8 +2,33 @@
 // Parses an inline IDL string (`{{ idl string }}`)
 //  and renders its components as HTML
 
-import { htmlJoinComma, showError } from "./utils.js";
+import { htmlJoinComma, showError, showWarning } from "./utils.js";
 import { html } from "./import-maps.js";
+
+const KNOWN_IDL_TYPES = new Set([
+  "interface",
+  "namespace",
+  "extended-attribute",
+  "constructor",
+  "method",
+  "argument",
+  "attribute",
+  "callback",
+  "dictionary",
+  "dict-member",
+  "enum",
+  "enum-value",
+  "exception",
+  "const",
+  "typedef",
+  "stringifier",
+  "serializer",
+  "iterator",
+  "maplike",
+  "setlike",
+  "event",
+]);
+
 const idlPrimitiveRegex = /^[a-z]+(\s+[a-z]+)+\??$/; // {{unrestricted double?}} {{ double }}
 const exceptionRegex = /\B"([^"]*)"\B/; // {{ "SomeException" }}
 
@@ -85,7 +110,7 @@ const isProbablySlotRegex = /\[\[.+\]\]/;
 
 /**
  * @param {string} str
- * @returns {InlineIdl[]}
+ * @returns {{ tokens: InlineIdl[], typeHint: string }}
  */
 function parseInlineIDL(str) {
   // Extract !!type suffix for type disambiguation (Bikeshed compat)
@@ -94,6 +119,15 @@ function parseInlineIDL(str) {
     [str, typeHint] = str.split("!!", 2);
     str = str.trim();
     typeHint = typeHint.trim();
+  }
+  if (typeHint && !KNOWN_IDL_TYPES.has(typeHint)) {
+    const valid = [...KNOWN_IDL_TYPES].join(", ");
+    showWarning(
+      `Unrecognized type hint \`!!${typeHint}\` in \`{{ ${str}!!${typeHint} }}\`. ` +
+        `Valid types: ${valid}.`,
+      "core/inline-idl-parser"
+    );
+    typeHint = "";
   }
 
   // If it's got [[ string ]], then split as an internal slot
