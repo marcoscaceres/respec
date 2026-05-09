@@ -226,6 +226,70 @@ describe("Core — dfnPanel", () => {
     expect(panelDfnNotExported.querySelector(".dfn-exported")).toBeFalsy();
   });
 
+  describe("linking terms", () => {
+    it("shows linking terms when data-lt differs from text content", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p><dfn id="test-lt" data-lt="alias|another alias">term</dfn></p>
+          <p><dfn id="test-no-lt">no aliases</dfn></p>
+          <p><dfn id="test-spaced" data-lt=" spaced | spaced ">spaced term</dfn></p>
+          <p>[=term=] [=no aliases=] [=spaced term=]</p>
+        </section>
+      `;
+      const doc = await makeRSDoc(makeStandardOps(null, body));
+
+      const panelWithLt = doc.getElementById(getPanelId("test-lt"));
+      const ltSection = panelWithLt.querySelector(".dfn-panel-lt");
+      expect(ltSection).toBeTruthy();
+      expect(ltSection.textContent).toContain("alias");
+      expect(ltSection.textContent).toContain("another alias");
+
+      const panelWithoutLt = doc.getElementById(getPanelId("test-no-lt"));
+      expect(panelWithoutLt.querySelector(".dfn-panel-lt")).toBeNull();
+
+      const panelSpaced = doc.getElementById(getPanelId("test-spaced"));
+      const spacedLt = panelSpaced.querySelector(".dfn-panel-lt");
+      expect(spacedLt).toBeTruthy();
+      expect(spacedLt.textContent).toContain("spaced");
+    });
+
+    it("markdown-parses backtick code in data-lt aliases", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p><dfn id="test-md-lt" data-lt="\`myProp\`|plain alias">term</dfn></p>
+          <p>[=term=]</p>
+        </section>
+      `;
+      const doc = await makeRSDoc(makeStandardOps(null, body));
+
+      const panel = doc.getElementById(getPanelId("test-md-lt"));
+      const ltSection = panel.querySelector(".dfn-panel-lt");
+      expect(ltSection).toBeTruthy();
+
+      const code = ltSection.querySelector("code");
+      expect(code).toBeTruthy();
+      expect(code.textContent).toBe("myProp");
+
+      expect(ltSection.textContent).toContain("plain alias");
+    });
+
+    it("does not show linking terms when data-lt matches text content", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p><dfn id="test-same" data-lt="term">term</dfn></p>
+          <p>[=term=]</p>
+        </section>
+      `;
+      const doc = await makeRSDoc(makeStandardOps(null, body));
+
+      const panel = doc.getElementById(getPanelId("test-same"));
+      expect(panel.querySelector(".dfn-panel-lt")).toBeNull();
+    });
+  });
+
   it("renders a link to jump to IDL block", async () => {
     const body = `
       <section data-dfn-for="Foo">

@@ -5,6 +5,7 @@
 import css from "../styles/dfn-panel.css.js";
 import { fetchBase } from "./text-loader.js";
 import { html } from "./import-maps.js";
+import { markdownToHtml } from "./markdown.js";
 import { norm } from "./utils.js";
 
 export const name = "core/dfn-panel";
@@ -72,11 +73,31 @@ function createPanel(dfn) {
         ${dfnExportedMarker(dfn)} ${idlMarker(dfn, links)}
         ${cddlMarker(dfn, links)}
       </div>
+      ${linkingTermsToHTML(dfn)}
       <p><b>Referenced in:</b></p>
       ${referencesToHTML(id, links)}
     </div>
   `;
   return panel;
+}
+
+/** @param {HTMLElement} dfn */
+function linkingTermsToHTML(dfn) {
+  const { lt } = dfn.dataset;
+  if (!lt) return null;
+  const normText = norm(dfn.textContent).toLowerCase();
+  const terms = [...new Set(lt.split("|").map(norm).filter(Boolean))].filter(
+    t => t.toLowerCase() !== normText
+  );
+  if (!terms.length) return null;
+  const renderedTerms = terms.map((t, i) => {
+    const parsed = markdownToHtml(t, { inline: true });
+    const sep = i > 0 ? ", " : "";
+    return html`${sep}<span>${{ html: parsed }}</span>`;
+  });
+  return html`<p class="dfn-panel-lt">
+    <b>Linking terms:</b> ${renderedTerms}
+  </p>`;
 }
 
 /** @param {HTMLElement} dfn */
