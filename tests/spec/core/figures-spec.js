@@ -69,6 +69,39 @@ describe("Core - Figures", () => {
     expect(anchorFig.title).toBe("漢字と仮名のサイズの示し方");
   });
 
+  it("uses closest ancestor lang attribute for figure label", async () => {
+    // html lang="en" but figure is inside section lang="ja"
+    // The label should be "図" not "Figure" (issue #2339)
+    const ops = {
+      config: makeBasicConfig(),
+      htmlAttrs: {
+        lang: "en",
+      },
+      body: `${makeDefaultBody()}
+        <section lang="ja">
+          <figure id="fig-ja">
+            <img src="img" alt="">
+            <figcaption>漢字と仮名のサイズの示し方</figcaption>
+          </figure>
+        </section>
+        <figure id="fig-en">
+          <img src="img" alt="">
+          <figcaption>An English figure</figcaption>
+        </figure>`,
+    };
+    const doc = await makeRSDoc(ops);
+
+    // Figure inside lang="ja" section should use Japanese label
+    const jaCaption = doc.getElementById("fig-ja").querySelector("figcaption");
+    const jaLink = jaCaption.querySelector("a.self-link");
+    expect(jaLink.textContent).toBe("図 1");
+
+    // Figure outside any lang section should use document lang (English)
+    const enCaption = doc.getElementById("fig-en").querySelector("figcaption");
+    const enLink = enCaption.querySelector("a.self-link");
+    expect(enLink.textContent).toBe("Figure 2");
+  });
+
   it("generates list of figures", async () => {
     const body = `
       <figure>
