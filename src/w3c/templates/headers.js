@@ -356,7 +356,7 @@ export default (conf, options) => {
               ${showPeople(conf, "authors")}
             `
           : ""}
-        ${conf.github || conf.wgPublicList
+        ${conf.github || conf.wgPublicList || conf.issueURL
           ? html`<dt>${l10n.feedback}</dt>
               ${renderFeedback(conf)}`
           : ""}
@@ -396,13 +396,18 @@ export function renderFeedback(conf) {
     // @ts-expect-error -- conf.github is normalized to object form before templates run
     const { repoURL, issuesURL, newIssuesURL, pullsURL, fullName } =
       conf.github;
+    const fileIssueURL = conf.issueURL ?? newIssuesURL;
     definitions.push(
       html`<dd>
         <a href="${repoURL}">GitHub ${fullName}</a>
         (<a href="${pullsURL}">pull requests</a>,
-        <a href="${newIssuesURL}">new issue</a>,
+        <a href="${fileIssueURL}">new issue</a>,
         <a href="${issuesURL}">open issues</a>)
       </dd>`
+    );
+  } else if (conf.issueURL) {
+    definitions.push(
+      html`<dd><a href="${conf.issueURL}">File an issue</a></dd>`
     );
   }
 

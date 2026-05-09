@@ -41,7 +41,7 @@ export default (conf, opts) => {
     </p>
     ${!conf.sotdAfterWGinfo ? opts.additionalContent : ""}
     ${!conf.github && conf.wgPublicList ? renderPublicList(conf, opts) : ""}
-    ${conf.github ? linkToCommunity(conf, opts) : ""}
+    ${conf.github || conf.issueURL ? linkToCommunity(conf, opts) : ""}
     ${conf.sotdAfterWGinfo ? opts.additionalContent : ""}
     ${opts.additionalSections}
   `;
