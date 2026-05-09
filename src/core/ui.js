@@ -109,30 +109,34 @@ function toggleMenu() {
  * @param {Element} element
  */
 function trapFocus(element) {
-  /** @type {NodeListOf<HTMLElement>} */
-  const focusableEls = element.querySelectorAll(
-    "a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled])"
-  );
-  const firstFocusableEl = focusableEls[0];
-  const lastFocusableEl = focusableEls[focusableEls.length - 1];
-  if (firstFocusableEl) {
-    firstFocusableEl.focus();
+  const selector =
+    "a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled])";
+  // Ensure links are tabbable in Safari (which requires tabindex for <a>)
+  for (const link of element.querySelectorAll("a[href]")) {
+    if (!link.hasAttribute("tabindex")) {
+      link.setAttribute("tabindex", "0");
+    }
+  }
+  const firstFocusable = element.querySelector(selector);
+  if (firstFocusable) {
+    /** @type {HTMLElement} */ (firstFocusable).focus();
   }
   element.addEventListener("keydown", e => {
     const keyEvent = /** @type {KeyboardEvent} */ (e);
-    if (keyEvent.key !== "Tab") {
-      return;
-    }
-    // shift + tab
+    if (keyEvent.key !== "Tab") return;
+    // Re-query each time so dynamically added items are included
+    /** @type {NodeListOf<HTMLElement>} */
+    const focusableEls = element.querySelectorAll(selector);
+    if (!focusableEls.length) return;
+    const first = focusableEls[0];
+    const last = focusableEls[focusableEls.length - 1];
     if (keyEvent.shiftKey) {
-      if (document.activeElement === firstFocusableEl) {
-        lastFocusableEl.focus();
+      if (document.activeElement === first) {
+        last.focus();
         keyEvent.preventDefault();
       }
-    }
-    // tab
-    else if (document.activeElement === lastFocusableEl) {
-      firstFocusableEl.focus();
+    } else if (document.activeElement === last) {
+      first.focus();
       keyEvent.preventDefault();
     }
   });
