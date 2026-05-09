@@ -182,7 +182,7 @@ describe("W3C — Bibliographic References", () => {
     const nr = [...doc.querySelectorAll("#normative-references dt")];
     expect(nr).toHaveSize(3);
     expect(nr[0].textContent).toBe("[CSSOM-VIEW]");
-    expect(nr[1].textContent).toBe("[DOM4]"); // first appearing [[TERM]] is used
+    expect(nr[1].textContent).toBe("[DOM4]"); // first appearing [[TERM]] is used, uppercased for display
     expect(nr[2].textContent).toBe("[LOCAL]");
 
     const refsLocal = [...doc.querySelectorAll("p#refs-local a")];
@@ -198,8 +198,8 @@ describe("W3C — Bibliographic References", () => {
     const { textContent: last } = doc.querySelector(
       "#normative-references dt:last-of-type"
     );
-    expect(first).toBe("[aaa]");
-    expect(last).toBe("[Zzz]");
+    expect(first).toBe("[AAA]");
+    expect(last).toBe("[ZZZ]");
   });
 
   it("makes sure that normative references win irrespective of case", () => {
@@ -210,7 +210,40 @@ describe("W3C — Bibliographic References", () => {
     expect(doc.querySelectorAll("#bib-fetch")).toHaveSize(1);
     const fetchRef = doc.getElementById("bib-fetch");
     expect(fetchRef.closest("section").id).toBe("normative-references");
-    expect(fetchRef.textContent.trim()).toBe("[fetch]");
+    expect(fetchRef.textContent.trim()).toBe("[FETCH]");
+  });
+
+  it("normalizes citation key display to uppercase in bibliography", async () => {
+    const body = `
+      <section id="conformance">
+        <p>[[appmanifest]] [[Geolocation]] [[WEBIDL]] [[fetch]] [[MixedCase]]</p>
+      </section>
+    `;
+    const localBiblio = {
+      appmanifest: { title: "Web Application Manifest" },
+      Geolocation: { title: "Geolocation API" },
+      WEBIDL: { title: "Web IDL" },
+      fetch: { title: "Fetch Standard" },
+      MixedCase: { title: "Some Mixed Case Spec" },
+    };
+    const ops = makeStandardOps({ localBiblio }, body);
+    const doc = await makeRSDoc(ops);
+
+    const dts = [...doc.querySelectorAll("#normative-references dt")];
+    // Display keys are always uppercase regardless of how they were cited
+    expect(dts.map(dt => dt.textContent.trim())).toEqual([
+      "[APPMANIFEST]",
+      "[FETCH]",
+      "[GEOLOCATION]",
+      "[MIXEDCASE]",
+      "[WEBIDL]",
+    ]);
+    // IDs remain lowercased (not affected by display normalization)
+    expect(doc.getElementById("bib-appmanifest")).toBeTruthy();
+    expect(doc.getElementById("bib-geolocation")).toBeTruthy();
+    expect(doc.getElementById("bib-webidl")).toBeTruthy();
+    expect(doc.getElementById("bib-fetch")).toBeTruthy();
+    expect(doc.getElementById("bib-mixedcase")).toBeTruthy();
   });
 
   it("shows error if reference doesn't exist", async () => {
@@ -249,14 +282,14 @@ describe("W3C — Bibliographic References", () => {
     // dt IDs must not contain spaces or characters that break CSS selectors
     const rubyDt = doc.getElementById("bib-ruby-tts-req");
     expect(rubyDt).withContext("dt#bib-ruby-tts-req should exist").toBeTruthy();
-    expect(rubyDt.textContent.trim()).toBe("[Ruby TTS Req]");
+    expect(rubyDt.textContent.trim()).toBe("[RUBY TTS REQ]");
 
     // colon+space in "Tokyo Ghoul: re" should both be collapsed to a single hyphen
     const tokyoDt = doc.getElementById("bib-tokyo-ghoul-re");
     expect(tokyoDt)
       .withContext("dt#bib-tokyo-ghoul-re should exist")
       .toBeTruthy();
-    expect(tokyoDt.textContent.trim()).toBe("[Tokyo Ghoul: re]");
+    expect(tokyoDt.textContent.trim()).toBe("[TOKYO GHOUL: RE]");
 
     // inline citation hrefs must point to the sanitized fragment
     const rubyLink = doc.querySelector("#ref-ruby a.bibref");
@@ -288,7 +321,7 @@ describe("W3C — Bibliographic References", () => {
     ).toBeTruthy();
     const refs = doc.querySelectorAll("#references dt");
     expect(refs).toHaveSize(1);
-    expect(refs[0].textContent).toBe("[dom]");
+    expect(refs[0].textContent).toBe("[DOM]");
   });
 
   it("fetches fresh results from specref", async () => {
@@ -308,7 +341,7 @@ describe("W3C — Bibliographic References", () => {
     ).toBeTruthy();
     const refs = doc.querySelectorAll("#references dt");
     expect(refs).toHaveSize(1);
-    expect(refs[0].textContent).toBe("[dom]");
+    expect(refs[0].textContent).toBe("[DOM]");
   });
 
   it("handles authors as a string instead of array", async () => {
