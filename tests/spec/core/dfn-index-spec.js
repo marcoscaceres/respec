@@ -502,5 +502,28 @@ describe("Core — dfn-index", () => {
       expect(parsing1.id).toBe("index-term-parsing");
       expect(parsing2.id).toBe("index-term-parsing-0");
     });
+
+    it("excludes elements with data-no-index from terms index", async () => {
+      const body = `<section data-cite="DOM">
+          <h2>TEST</h2>
+          <p>{{ Event }}</p>
+          <p><a data-cite="INFRA#ascii-uppercase" data-no-index>heading link</a></p>
+        </section>
+        <section id="index"></section>`;
+      const ops = makeStandardOps({ xref: "web-platform" }, body);
+      const doc = await makeRSDoc(ops);
+      const externalIndex = doc.getElementById("index-defined-elsewhere");
+
+      // {{ Event }} should appear in the index as normal
+      const terms = [...externalIndex.querySelectorAll(".index-term")].map(el =>
+        el.textContent.trim()
+      );
+      expect(terms.some(t => t.includes("Event"))).toBeTrue();
+
+      // The ASCII uppercase term (only referenced via data-no-index) must not appear
+      expect(
+        terms.every(t => !t.toLowerCase().includes("ascii uppercase"))
+      ).toBeTrue();
+    });
   });
 });
