@@ -75,21 +75,32 @@ function removeIncludeAttributes(el) {
   ].forEach(attr => el.removeAttribute(attr));
 }
 
-export async function run() {
-  await runIncludes(document, 1);
+/**
+ * @param {Conf} conf
+ */
+export async function run(conf) {
+  await runIncludes(document, 1, conf);
 }
 
 /**
  * @param {HTMLElement | Document} root
  * @param {number} currentDepth
+ * @param {Conf} conf
  */
-async function runIncludes(root, currentDepth) {
+async function runIncludes(root, currentDepth, conf) {
   /** @type {NodeListOf<HTMLElement>} */
   const includables = root.querySelectorAll("[data-include]");
   const promisesToInclude = Array.from(includables).map(async el => {
-    const url = el.dataset.include;
+    let url = el.dataset.include;
     if (!url) {
       return; // just skip it
+    }
+    if (
+      conf.dataIncludeBase &&
+      !url.startsWith("http") &&
+      !url.startsWith("/")
+    ) {
+      url = new URL(url, conf.dataIncludeBase).href;
     }
     const id = `include-${String(Math.random()).slice(2)}`;
     el.dataset.includeId = id;
@@ -99,7 +110,7 @@ async function runIncludes(root, currentDepth) {
       processResponse(text, id, url);
       if (currentDepth < 3) {
         // For performance reasons, only allow limited nesting.
-        await runIncludes(el, currentDepth + 1);
+        await runIncludes(el, currentDepth + 1, conf);
       }
     } catch (e) {
       const err = /** @type {Error} */ (e);

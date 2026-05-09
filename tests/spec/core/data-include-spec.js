@@ -133,6 +133,26 @@ describe("Core — Data Include", () => {
     ).toBeTrue();
   });
 
+  it("resolves relative data-include URLs against dataIncludeBase when set", async () => {
+    const base = `${window.location.origin}/tests/spec/core/`;
+    const body = `<section id="base-include"><div data-include="inc.html"></div></section>`;
+    const ops = makeStandardOps({ dataIncludeBase: base }, body);
+    const doc = await makeRSDoc(ops);
+    const p = doc.querySelector("#base-include p");
+    expect(p).toBeTruthy();
+    expect(p.textContent).toBe("INCLUDED");
+  });
+
+  it("does not alter absolute or root-relative data-include URLs when dataIncludeBase is set", async () => {
+    const base = "https://example.com/some/path/";
+    const body = `<section id="root-rel-include"><div data-include="/tests/spec/core/inc.html"></div></section>`;
+    const ops = makeStandardOps({ dataIncludeBase: base }, body);
+    const doc = await makeRSDoc(ops);
+    const p = doc.querySelector("#root-rel-include > div > p");
+    expect(p).toBeTruthy();
+    expect(p.textContent).toBe("INCLUDED");
+  });
+
   it("includes text when data-include-format is 'text'", async () => {
     const ops = {
       config: makeBasicConfig(),
