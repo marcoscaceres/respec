@@ -209,6 +209,23 @@ describe("Core — dfn-index", () => {
       expect(localIndex.querySelectorAll("cite")).toHaveSize(0);
       expect(localIndex.querySelectorAll(".bibref")).toHaveSize(0);
     });
+
+    it("excludes local dfns with data-no-index from local terms index", async () => {
+      const body = `<section id="content">
+          <h2>Whatever</h2>
+          <p><dfn>included term</dfn></p>
+          <p><dfn data-no-index>excluded term</dfn></p>
+        </section>
+        <section id="index"></section>`;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const localIndex = doc.getElementById("index-defined-here");
+      const terms = [
+        ...localIndex.querySelectorAll("ul.index > li .index-term"),
+      ].map(el => el.textContent.trim());
+      expect(terms).toContain("included term");
+      expect(terms).not.toContain("excluded term");
+    });
   });
 
   describe("External Terms Index", () => {
@@ -503,27 +520,27 @@ describe("Core — dfn-index", () => {
       expect(parsing2.id).toBe("index-term-parsing-0");
     });
 
-    it("excludes elements with data-no-index from terms index", async () => {
-      const body = `<section data-cite="DOM">
+    it("excludes elements with data-no-index from external terms index", async () => {
+      const localBiblio = {
+        TESTSPEC: { title: "Test Spec", href: "https://example.com/testspec/" },
+      };
+      const body = `<section id="content">
           <h2>TEST</h2>
-          <p>{{ Event }}</p>
-          <p><a data-cite="INFRA#ascii-uppercase" data-no-index>heading link</a></p>
+          <p><a data-cite="TESTSPEC#included-term">included term</a></p>
+          <p><a data-cite="TESTSPEC#excluded-term" data-no-index>excluded term</a></p>
         </section>
         <section id="index"></section>`;
-      const ops = makeStandardOps({ xref: "web-platform" }, body);
+      const ops = makeStandardOps({ localBiblio }, body);
       const doc = await makeRSDoc(ops);
       const externalIndex = doc.getElementById("index-defined-elsewhere");
 
-      // {{ Event }} should appear in the index as normal
       const terms = [...externalIndex.querySelectorAll(".index-term")].map(el =>
         el.textContent.trim()
       );
-      expect(terms.some(t => t.includes("Event"))).toBeTrue();
-
-      // The ASCII uppercase term (only referenced via data-no-index) must not appear
-      expect(
-        terms.every(t => !t.toLowerCase().includes("ascii uppercase"))
-      ).toBeTrue();
+      // Regular data-cite link appears in the external terms index
+      expect(terms).toContain("included term");
+      // data-no-index link must not appear in the external terms index
+      expect(terms).not.toContain("excluded term");
     });
   });
 });
