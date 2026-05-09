@@ -27,6 +27,8 @@ describe("Core Linter Rule - 'local-refs-exist'", () => {
     const [warning] = warnings;
     expect(warning.elements).toHaveSize(2);
     expect(warning.hint).toContain("#ID-NOT-EXIST");
+    // Deduplication: same href should only appear once even with multiple broken links
+    expect(warning.hint).not.toMatch(/#ID-NOT-EXIST.*#ID-NOT-EXIST/);
     const [offendingElement] = warning.elements;
     const { hash } = new URL(offendingElement.href);
     expect(hash).toBe("#ID-NOT-EXIST");

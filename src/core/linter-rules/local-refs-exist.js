@@ -11,11 +11,11 @@ export const name = "core/linter-rules/local-refs-exist";
 const localizationStrings = {
   en: {
     msg: "Broken local reference found in document.",
-    hint: "Please fix the links mentioned.",
+    hint: "Please fix the links mentioned. Broken links:",
   },
   cs: {
     msg: "V dokumentu byla nalezena nefunkční lokální reference.",
-    hint: "Opravte prosím uvedené odkazy.",
+    hint: "Opravte prosím uvedené odkazy. Nefunkční odkazy:",
   },
 };
 const l10n = getIntlData(localizationStrings);
@@ -33,10 +33,10 @@ export function run(conf) {
   const elems = document.querySelectorAll("a[href^='#']");
   const offendingElements = [...elems].filter(isBrokenHyperlink);
   if (offendingElements.length) {
-    const links = offendingElements
-      .map(el => el.getAttribute("href"))
-      .join(", ");
-    const hint = `${l10n.hint} Broken links: ${links}`;
+    const links = [
+      ...new Set(offendingElements.map(el => el.getAttribute("href"))),
+    ].join(", ");
+    const hint = `${l10n.hint} ${links}`;
     showWarning(l10n.msg, name, {
       hint,
       elements: offendingElements,
