@@ -21,6 +21,8 @@ import { registerDefinition } from "./dfn-map.js";
 export const name = "core/webidl";
 const pluginName = name;
 
+// Tracks how many times each (qualified-name + type-suffix) combination has
+// been seen, to disambiguate overloads that share identical type signatures.
 const operationNames = {};
 const idlPartials = {};
 
@@ -47,6 +49,11 @@ const templates = {
   },
   reference(wrapped, unescaped, context) {
     if (context.type === "extended-attribute") {
+      if (context.name === "Exposed") {
+        return html`<a data-link-type="interface" data-xref-type="interface"
+          >${wrapped}</a
+        >`;
+      }
       return wrapped;
     }
     let type = "_IDL_";
@@ -243,14 +250,10 @@ function resolveNameAndId(defn, parent) {
     }
     case "constructor":
     case "operation": {
-      const overload = resolveOverload(name, parent);
+      const overload = resolveOverload(name, parent, defn.arguments);
       if (overload) {
         name += overload;
         idlId += overload;
-      } else if (defn.arguments.length) {
-        idlId += defn.arguments
-          .map(arg => `-${arg.name.toLowerCase()}`)
-          .join("");
       }
       break;
     }
@@ -269,21 +272,95 @@ function resolvePartial(defn) {
   return `-partial-${idlPartials[defn.name]}`;
 }
 
-function resolveOverload(name, parentName) {
+/**
+ * Encodes a single WebIDL type into a compact, URL-safe, lowercase string
+ * segment suitable for use in an HTML fragment identifier.
+ *
+ * The encoding scheme mirrors C++ name mangling (Itanium ABI) in spirit:
+ * types are encoded deterministically so that the same IDL always produces
+ * the same ID, regardless of source order. Concretely:
+ *
+ *   - Primitive / named types: lowercased verbatim ("short", "domstring").
+ *   - Generic types (Promise, sequence, FrozenArray, …): the generic name
+ *     followed by each type argument, separated by "-"
+ *     (e.g. "Promise<DOMString>" → "promise-domstring").
+ *   - Union types: all member types joined by "-"
+ *     (e.g. "(DOMString or long)" → "domstring-long").
+ *   - Nullable modifier (?) is dropped; it does not affect overload
+ *     resolution per the WebIDL spec and keeping it would make IDs verbose.
+ *
+ * @param {{ generic: string, union: boolean, nullable: boolean, idlType: string | any[] }} idlType
+ * @returns {string}
+ */
+function encodeIdlType(idlType) {
+  if (idlType.union) {
+    // Union: (A or B or C) — flatten all member types
+    return idlType.idlType.map(encodeIdlType).join("-");
+  }
+  if (idlType.generic) {
+    // Generic: Promise<T>, sequence<T>, FrozenArray<T>, etc.
+    const inner = idlType.idlType.map(encodeIdlType).join("-");
+    return inner
+      ? `${idlType.generic.toLowerCase()}-${inner}`
+      : idlType.generic.toLowerCase();
+  }
+  // Plain type name (possibly nullable — nullable is dropped by design).
+  return String(idlType.idlType).toLowerCase();
+}
+
+/**
+ * Builds an overload-disambiguation suffix for a WebIDL operation or
+ * constructor.
+ *
+ * The suffix encodes the parameter *types* (not names) so that:
+ *
+ *   foo()                          → "" (no suffix — unambiguous zero-arg form)
+ *   foo(short s)                   → "!overload-short"
+ *   foo(short s, long n)           → "!overload-short-long"
+ *   foo(DOMString str, object obj) → "!overload-domstring-object"
+ *   foo(Promise<DOMString> p)      → "!overload-promise-domstring"
+ *   foo((Dict or boolean) opt)     → "!overload-dict-boolean"
+ *
+ * If two overloads happen to produce the same type signature (which is a
+ * WebIDL validation error in practice, but we handle it defensively),
+ * subsequent collisions receive a numeric disambiguator: "!overload-short-2",
+ * "!overload-short-3", etc.
+ *
+ * The "!overload-" prefix preserves compatibility with dfn-finder.js, which
+ * uses `name.includes("!overload")` to recognise overloaded operations.
+ *
+ * @param {string} name - The operation name (e.g. "ull").
+ * @param {string} parentName - The interface/mixin name (e.g. "MethBasic").
+ * @param {any[]} args - The parsed argument list from the webidl2 AST.
+ * @returns {string} - The overload suffix, or "" for a zero-arg operation that
+ *   has no same-named sibling.
+ */
+function resolveOverload(name, parentName, args) {
   const qualifiedName = `${parentName}.${name}`;
-  const fullyQualifiedName = `${qualifiedName}()`;
-  let overload;
-  if (!operationNames[fullyQualifiedName]) {
-    operationNames[fullyQualifiedName] = 0;
+
+  // Compute the type-based portion of the suffix.
+  const typePart = args.map(arg => encodeIdlType(arg.idlType)).join("-");
+
+  // The key includes the type signature so same-typed overloads collide.
+  const typeKey = `${qualifiedName}!${typePart}`;
+
+  // First time we see this (name, type-signature) pair — no suffix needed
+  // when there are no arguments, but we still need to track it.
+  if (!operationNames[typeKey]) {
+    operationNames[typeKey] = 0;
   }
-  if (!operationNames[qualifiedName]) {
-    operationNames[qualifiedName] = 0;
-  } else {
-    overload = `!overload-${operationNames[qualifiedName]}`;
+
+  const count = operationNames[typeKey];
+  operationNames[typeKey] += 1;
+
+  // Zero-argument form with no prior same-typed collision → no suffix.
+  if (typePart === "" && count === 0) {
+    return "";
   }
-  operationNames[fullyQualifiedName] += 1;
-  operationNames[qualifiedName] += 1;
-  return overload || "";
+
+  // Non-zero args or collision: build the !overload-… suffix.
+  const base = typePart ? `!overload-${typePart}` : "!overload";
+  return count === 0 ? base : `${base}-${count + 1}`;
 }
 
 function getIdlId(name, parentName) {
