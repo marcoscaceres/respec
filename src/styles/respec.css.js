@@ -18,6 +18,14 @@ export default css`
   }
 }
 
+/* Backward-compatible fragment IDs generated from data-old-ids attribute */
+span.respec-old-id {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 /* --- INLINES --- */
 a.internalDFN {
   color: inherit;

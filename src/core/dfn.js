@@ -8,6 +8,7 @@ import {
   getDfnTitles,
   norm,
   showError,
+  showWarning,
   toMDCode,
 } from "./utils.js";
 import {
@@ -78,6 +79,40 @@ export function run() {
       dfn.dataset.lt = lt.join("|");
     }
   }
+  addOldIds();
+}
+
+/**
+ * For each `<dfn data-old-ids="...">`, inserts hidden `<span>` elements with
+ * the old IDs immediately before the `<dfn>`. This preserves backward-compatible
+ * fragment links when a term is renamed.
+ *
+ * Mirrors Bikeshed's `oldids` attribute and `addOldIDs()` function in
+ * bikeshed/h/dom.py.
+ */
+function addOldIds() {
+  /** @type {NodeListOf<HTMLElement>} */
+  const dfnsWithOldIds = document.querySelectorAll("dfn[data-old-ids]");
+  dfnsWithOldIds.forEach(dfn => {
+    const rawIds = dfn.dataset.oldIds;
+    if (!rawIds) return;
+    const oldIds = rawIds
+      .split(",")
+      .map(id => id.trim())
+      .filter(id => id.length > 0);
+    oldIds.forEach(oldId => {
+      if (document.getElementById(oldId)) {
+        const msg = docLink`Duplicate ID \`${oldId}\` in ${"[data-old-ids]"} attribute.`;
+        const hint = `The ID "${oldId}" already exists in the document. Choose a unique old ID.`;
+        showWarning(msg, name, { elements: [dfn], hint });
+        return;
+      }
+      const span = document.createElement("span");
+      span.id = oldId;
+      span.className = "respec-old-id";
+      dfn.before(span);
+    });
+  });
 }
 
 /**
