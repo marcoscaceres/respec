@@ -36,8 +36,7 @@ const l10n = getIntlData(localizationStrings);
 
 export function run(conf) {
   /** @type {HTMLElement} */
-  const h1Elem =
-    document.querySelector("h1#title") || html`<h1 id="title"></h1>`;
+  const h1Elem = document.querySelector("h1#title") || html`<h1></h1>`;
 
   // check existing element is ok to use
   if (h1Elem.isConnected && h1Elem.textContent.trim() === "") {

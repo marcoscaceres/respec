@@ -307,8 +307,9 @@ function createTableOfContents(ol) {
     }
   }
 
+  const titleId = document.querySelector("h1.title")?.id || "title";
   const link = html`<p role="navigation" id="back-to-top">
-    <a href="#title"><abbr title="${l10n.back_to_top}">&uarr;</abbr></a>
+    <a href="#${titleId}"><abbr title="${l10n.back_to_top}">&uarr;</abbr></a>
   </p>`;
   document.body.append(link);
 }

@@ -112,7 +112,7 @@ function getSpecSubTitleElem(conf) {
  */
 export default conf => {
   return html`<div class="head">
-    ${(conf.logos ?? []).map(showLogo)} ${document.querySelector("h1#title")}
+    ${(conf.logos ?? []).map(showLogo)} ${document.querySelector("h1.title")}
     ${getSpecSubTitleElem(conf)}
     <h2>
       ${conf.textStatus}
