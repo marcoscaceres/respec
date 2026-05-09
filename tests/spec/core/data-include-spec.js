@@ -134,7 +134,7 @@ describe("Core — Data Include", () => {
   });
 
   it("resolves relative data-include URLs against dataIncludeBase when set", async () => {
-    const base = `${window.location.origin}/tests/spec/core/`;
+    const base = `${window.location.origin}/base/tests/spec/core/`;
     const body = `<section id="base-include"><div data-include="inc.html"></div></section>`;
     const ops = makeStandardOps({ dataIncludeBase: base }, body);
     const doc = await makeRSDoc(ops);

@@ -123,6 +123,8 @@ interface Conf {
   noTOC?: boolean;
   /** Disables injecting ReSpec styles */
   noReSpecCSS?: boolean;
+  /** Base URL used to resolve relative `data-include` URLs */
+  dataIncludeBase?: string;
 
   /** Indicates whether the document is a preview */
   isPreview?: boolean;
