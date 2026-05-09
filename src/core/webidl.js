@@ -47,6 +47,25 @@ const templates = {
   },
   reference(wrapped, unescaped, context) {
     if (context.type === "extended-attribute") {
+      if (context.name === "PutForwards") {
+        const { idlType } = context.parent;
+        // idlType must be a simple (non-union, non-generic) interface type
+        if (idlType && !idlType.union && !idlType.generic && idlType.idlType) {
+          const forInterface =
+            typeof idlType.idlType === "string"
+              ? idlType.idlType
+              : idlType.idlType[0]?.idlType;
+          if (forInterface) {
+            return html`<a
+              data-link-type="idl"
+              data-xref-type="attribute"
+              data-link-for="${forInterface}"
+              data-xref-for="${forInterface}"
+              >${wrapped}</a
+            >`;
+          }
+        }
+      }
       return wrapped;
     }
     let type = "_IDL_";

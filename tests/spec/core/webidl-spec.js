@@ -1432,14 +1432,57 @@ callback CallBack = Z? (X x, optional Y y, /*trivia*/ optional Z z);
       <section>
         <h2>Test</h2>
         <pre class="idl" id="link-test">
-          interface mixin InnerHTMLMixin {
-            [PutForwards=html] readonly attribute DOMString innerHTML;
+          [Exposed=Window]
+          interface Foo {
+            attribute long bar;
           };
         </pre>
       </section>
     `;
     const ops = makeStandardOps(null, body);
     const doc = await makeRSDoc(ops);
+    // Exposed=Window: "Window" is not a PutForwards, so it must not produce
+    // a data-link-for anchor inside the extended attribute
+    expect(
+      doc.querySelector("#link-test .extAttr a[data-link-for]")
+    ).toBeNull();
+    expect(doc.querySelector(".respec-offending-element")).toBeFalsy();
+  });
+
+  it("links [PutForwards=X] value to the forwarded attribute on the target interface", async () => {
+    const body = `
+      <section>
+        <h2>Test</h2>
+        <pre class="idl" id="putforwards-test">
+          [Exposed=Window]
+          interface Foo {
+            attribute long bar;
+          };
+          [Exposed=Window]
+          interface Bar {
+            [PutForwards=bar] readonly attribute Foo foo;
+          };
+        </pre>
+        <p data-dfn-for="Foo">
+          <dfn>Foo</dfn>: The <dfn>bar</dfn> attribute.
+        </p>
+        <p data-dfn-for="Bar">
+          <dfn>Bar</dfn>: The <dfn>foo</dfn> attribute.
+        </p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+
+    // The value "bar" in [PutForwards=bar] must become a link to Foo.bar
+    const putForwardsLink = doc.querySelector(
+      "#putforwards-test .extAttr a[data-link-for='Foo']"
+    );
+    expect(putForwardsLink).toBeTruthy();
+    expect(putForwardsLink.textContent).toBe("bar");
+    expect(putForwardsLink.dataset.linkType).toBe("idl");
+    // Must resolve to the Foo.bar dfn (dom-foo-bar)
+    expect(putForwardsLink.href).toContain("#dom-foo-bar");
     expect(doc.querySelector(".respec-offending-element")).toBeFalsy();
   });
 
