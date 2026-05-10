@@ -83,8 +83,8 @@ export function run() {
 }
 
 /**
- * For each `<dfn data-old-ids="...">`, inserts empty `<span>` elements with
- * the old IDs at the start of the `<dfn>`. This preserves backward-compatible
+ * For each `<dfn data-old-ids="...">`, inserts empty anchor `<span>` elements
+ * with the old IDs at the start of the `<dfn>`. This preserves backward-compatible
  * fragment links when a term is renamed.
  *
  * Mirrors Bikeshed's `oldids` attribute and `addOldIDs()` function in
