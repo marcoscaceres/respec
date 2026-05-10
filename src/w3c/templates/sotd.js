@@ -84,35 +84,74 @@ export default (conf, opts) => {
   return html`
     <h2>${l10n.sotd}</h2>
     ${conf.isPreview ? renderPreview(conf) : ""}
-    ${conf.isUnofficial
-      ? renderIsUnofficial(opts)
-      : conf.isTagFinding
-        ? opts.additionalContent
-        : conf.isNoTrack
-          ? renderIsNoTrack(conf, opts)
-          : html`
-              <p><em>${l10n.status_at_publication}</em></p>
-              ${conf.isMemberSubmission
-                ? noteForSubmission(conf, opts)
-                : html`
-                    ${!conf.sotdAfterWGinfo ? opts.additionalContent : ""}
-                    ${!conf.overrideStatus
-                      ? html` ${linkToWorkingGroup(conf)} `
-                      : ""}
-                    ${conf.sotdAfterWGinfo ? opts.additionalContent : ""}
-                    ${conf.isRec ? renderIsRec(conf) : renderNotRec(conf)}
-                    ${renderDeliverer(conf)}
-                    <p>
-                      This document is governed by the
-                      <a id="w3c_process_revision" href="${processLink}"
-                        >18 August 2025 W3C Process Document</a
-                      >.
-                    </p>
-                  `}
-            `}
+    ${conf.isCGBG
+      ? renderCGBG(conf, opts)
+      : conf.isUnofficial
+        ? renderIsUnofficial(opts)
+        : conf.isTagFinding
+          ? opts.additionalContent
+          : conf.isNoTrack
+            ? renderIsNoTrack(conf, opts)
+            : html`
+                <p><em>${l10n.status_at_publication}</em></p>
+                ${conf.isMemberSubmission
+                  ? noteForSubmission(conf, opts)
+                  : html`
+                      ${!conf.sotdAfterWGinfo ? opts.additionalContent : ""}
+                      ${!conf.overrideStatus
+                        ? html` ${linkToWorkingGroup(conf)} `
+                        : ""}
+                      ${conf.sotdAfterWGinfo ? opts.additionalContent : ""}
+                      ${conf.isRec ? renderIsRec(conf) : renderNotRec(conf)}
+                      ${renderDeliverer(conf)}
+                      <p>
+                        This document is governed by the
+                        <a id="w3c_process_revision" href="${processLink}"
+                          >18 August 2025 W3C Process Document</a
+                        >.
+                      </p>
+                    `}
+              `}
     ${opts.additionalSections}
   `;
 };
+
+/**
+ * @param {Conf} conf
+ * @param {SotdOpts} opts
+ */
+function renderCGBG(conf, opts) {
+  return html`
+    <p>
+      This specification was published by the
+      <a href="${conf.wgURI}">${conf.wg}</a>. It is not a W3C Standard nor is it
+      on the W3C Standards Track.
+      ${conf.isCGFinal
+        ? html`
+            Please note that under the
+            <a href="https://www.w3.org/community/about/agreements/final/"
+              >W3C Community Final Specification Agreement (FSA)</a
+            >
+            other conditions apply.
+          `
+        : html`
+            Please note that under the
+            <a href="https://www.w3.org/community/about/agreements/cla/"
+              >W3C Community Contributor License Agreement (CLA)</a
+            >
+            there is a limited opt-out and other conditions apply.
+          `}
+      Learn more about
+      <a href="https://www.w3.org/community/"
+        >W3C Community and Business Groups</a
+      >.
+    </p>
+    ${!conf.sotdAfterWGinfo ? opts.additionalContent : ""}
+    ${!conf.github && conf.wgPublicList ? renderPublicList(conf, opts) : ""}
+    ${conf.github ? linkToCommunity(conf, opts) : ""}
+    ${conf.sotdAfterWGinfo ? opts.additionalContent : ""}
+  `;
+}
 
 /** @param {Conf} conf */
 export function renderPreview(conf) {
