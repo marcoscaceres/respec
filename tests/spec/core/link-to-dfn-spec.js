@@ -129,6 +129,32 @@ describe("Core — Link to definitions", () => {
     expect(attrLink.hash).toBe("#baz");
   });
 
+  it("does not match a local dfn when an attr-value link needs a scoped match", async () => {
+    // Regression test for https://github.com/speced/respec/issues/4435.
+    // [^link/rel/manifest^] should NOT resolve to a local <dfn>manifest</dfn>
+    // (which has no dfn-for). The attr-value link is scoped to "link/rel" and
+    // must only match a local dfn that has data-dfn-for="link/rel". If no such
+    // local dfn exists, it should be treated as an external reference.
+    const body = `
+      <section>
+        <h2>Test</h2>
+        <p>
+          <dfn id="dfn-manifest">manifest</dfn> is a concept.
+        </p>
+        <p id="attr-link">[^ link/rel/manifest ^]</p>
+      </section>
+    `;
+    const ops = makeStandardOps(null, body);
+    const doc = await makeRSDoc(ops);
+    const a = doc.querySelector("#attr-link a");
+    expect(a).toBeTruthy();
+    expect(a.dataset.linkType).toBe("attr-value");
+    // Must NOT link to the unrelated local dfn
+    expect(a.hash).not.toBe("#dfn-manifest");
+    // Must be treated as an external (xref) reference, not an internal link
+    expect(a.classList).not.toContain("internalDFN");
+  });
+
   it("uses data-dfn-type in linking", async () => {
     const body = `
       <section>

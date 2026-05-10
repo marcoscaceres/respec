@@ -194,10 +194,22 @@ function findMatchingDfn(anchor, titleToDfns) {
   const dfnsByType = titleToDfns.get(target.title)?.get(target.for);
   const { linkType } = anchor.dataset;
   if (linkType) {
-    for (const type of linkType.split("|")) {
-      if (dfnsByType?.get(type)) {
-        return dfnsByType.get(type);
-      }
+    const linkTypes = linkType.split("|");
+    for (const type of linkTypes) {
+      const dfn = dfnsByType?.get(type);
+      if (dfn) return dfn;
+    }
+    // Don't silently fall back to a "dfn"-typed match when:
+    // 1. the link type doesn't include "dfn" (e.g. "attr-value", "element-attr"), AND
+    // 2. the only match was a global (for="") dfn, but the link explicitly
+    //    requested a scoped match (anchor has data-link-for set).
+    // In that case return undefined so xref can resolve the external definition.
+    if (
+      !linkTypes.includes("dfn") &&
+      target.for === "" &&
+      anchor.dataset.linkFor
+    ) {
+      return undefined;
     }
     return dfnsByType?.get("dfn");
   } else {
