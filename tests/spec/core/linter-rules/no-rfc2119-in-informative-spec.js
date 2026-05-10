@@ -1,6 +1,7 @@
 "use strict";
 
 import {
+  errorFilters,
   flushIframes,
   makeRSDoc,
   makeStandardOps,
@@ -10,6 +11,7 @@ import {
 describe("Core — linter-rules — no-rfc2119-in-informative", () => {
   const ruleName = "no-rfc2119-in-informative";
   const pluginName = `core/linter-rules/${ruleName}`;
+  const lintErrors = errorFilters.filter(pluginName);
   const lintWarnings = warningFilters.filter(pluginName);
 
   afterAll(() => {
@@ -38,6 +40,32 @@ describe("Core — linter-rules — no-rfc2119-in-informative", () => {
       <section id="conformance"><h2>Conformance</h2></section>`;
     const ops = makeStandardOps({ lint: { [ruleName]: false } }, body);
     const doc = await makeRSDoc(ops);
+    expect(lintWarnings(doc)).toHaveSize(0);
+  });
+
+  it("warns when the rule is set to 'warn'", async () => {
+    const body = `
+      <section class="informative">
+        <h2>Background</h2>
+        <p>Implementations MUST do the thing.</p>
+      </section>
+      <section id="conformance"><h2>Conformance</h2></section>`;
+    const ops = makeStandardOps({ lint: { [ruleName]: "warn" } }, body);
+    const doc = await makeRSDoc(ops);
+    expect(lintErrors(doc)).toHaveSize(0);
+    expect(lintWarnings(doc)).toHaveSize(1);
+  });
+
+  it("shows as error when the rule is set to 'error'", async () => {
+    const body = `
+      <section class="informative">
+        <h2>Background</h2>
+        <p>Implementations MUST do the thing.</p>
+      </section>
+      <section id="conformance"><h2>Conformance</h2></section>`;
+    const ops = makeStandardOps({ lint: { [ruleName]: "error" } }, body);
+    const doc = await makeRSDoc(ops);
+    expect(lintErrors(doc)).toHaveSize(1);
     expect(lintWarnings(doc)).toHaveSize(0);
   });
 

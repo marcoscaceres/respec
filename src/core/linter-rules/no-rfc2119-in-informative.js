@@ -17,6 +17,7 @@ import {
   docLink,
   getIntlData,
   nonNormativeSelector,
+  showError,
   showWarning,
 } from "../utils.js";
 
@@ -68,6 +69,8 @@ function isInInformativeContext(elem) {
 export function run(conf) {
   // @ts-expect-error -- LintConfig can be false; ?. only short-circuits null/undefined in TS
   if (!conf.lint?.[ruleName]) return;
+  // @ts-expect-error -- at this point lint is truthy (object form), safe to index
+  const logger = conf.lint[ruleName] === "error" ? showError : showWarning;
 
   /** @type {NodeListOf<HTMLElement>} */
   const candidates = document.querySelectorAll("em.rfc2119");
@@ -78,7 +81,7 @@ export function run(conf) {
 
   if (!offenders.length) return;
 
-  showWarning(l10n.msg, name, {
+  logger(l10n.msg, name, {
     hint: l10n.hint,
     elements: offenders,
   });
