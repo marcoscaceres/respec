@@ -1403,7 +1403,7 @@ callback CallBack = Z? (X x, optional Y y, /*trivia*/ optional Z z);
     const ops = makeStandardOps(null, body);
     const doc = await makeRSDoc(ops);
 
-    // Exposed=(Window) creates a link with data-xref-type="interface"
+    // Exposed=(Window, Worker) creates xrefable interface links
     const exposedAnchors = doc.querySelectorAll(
       "#link-test .extAttr a[data-link-type='interface'][data-xref-type='interface']"
     );
@@ -1412,11 +1412,12 @@ callback CallBack = Z? (X x, optional Y y, /*trivia*/ optional Z z);
     expect(exposedAnchors[1].textContent).toBe("Worker");
 
     // readonly attribute object bar;
-    const objectAnchor = doc.querySelector("#link-test a[href$=idl-object]");
-    expect(objectAnchor.dataset.xrefType).toBe("interface");
-    expect(objectAnchor.href).toBe(
-      "https://webidl.spec.whatwg.org/#idl-object"
+    const objectAnchor = doc.querySelector(
+      "#link-test .idlType a[data-link-type='interface'][data-xref-type='interface']"
     );
+    expect(objectAnchor.textContent).toBe("object");
+    expect(objectAnchor.dataset.xrefType).toBe("interface");
+    expect(objectAnchor.dataset.linkType).toBe("interface");
   });
 
   it("does not link arbitrary extended attribute identifiers", async () => {
