@@ -440,10 +440,10 @@ interface SuperStar {
           };
         </pre>
         <dfn>constructor</dfn>
-        <dfn>constructor!overload-1</dfn>
+        <dfn>constructor!overload-short</dfn>
         <p id="linkMe">
           <a>constructor</a>
-          <a>constructor!overload-1</a>
+          <a>constructor!overload-short</a>
         </p>
       </section>
     `;
@@ -453,7 +453,7 @@ interface SuperStar {
     expect(links).toHaveSize(2);
     expect(links[0].getAttribute("href")).toBe("#dom-superstar-constructor");
     expect(links[1].getAttribute("href")).toBe(
-      "#dom-superstar-constructor!overload-1"
+      "#dom-superstar-constructor!overload-short"
     );
   });
 
@@ -790,7 +790,7 @@ interface MethBasic {
     // Overloads
     const overloads = methods.filter(m => m.textContent.includes("ull"));
     expect(overloads[0].id).toBe("idl-def-methbasic-ull-s-n");
-    expect(overloads[1].id).toBe("idl-def-methbasic-ull!overload-1");
+    expect(overloads[1].id).toBe("idl-def-methbasic-ull!overload");
     expect(overloads[1].querySelector(".idlType a").textContent).toBe(
       "SuperStar"
     );
@@ -800,7 +800,7 @@ interface MethBasic {
       m.querySelector("a.idlName").getAttribute("href")
     );
     expect(ulls[0]).toBe("#dom-methbasic-ull");
-    expect(ulls[ulls.length - 1]).toBe("#dom-methbasic-ull!overload-1");
+    expect(ulls[ulls.length - 1]).toBe("#dom-methbasic-ull!overload");
     expect(
       methods
         .find(m => m.textContent.includes("withName"))
