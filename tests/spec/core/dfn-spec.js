@@ -779,4 +779,36 @@ describe("Core — Definitions", () => {
       expect(dfn.dataset.noexport).toBeUndefined();
     });
   });
+
+  describe("externalDFN class", () => {
+    it("sets data-noexport and data-no-index on manually-authored externalDFN", async () => {
+      const body = `
+        <section id="dfns">
+          <h2>Definitions</h2>
+          <p><dfn id="ext" class="externalDFN">borrowed term</dfn></p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const dfn = doc.getElementById("ext");
+      expect(dfn.dataset.noexport).toBe("");
+      expect(dfn.dataset.noIndex).toBe("");
+      expect(dfn.dataset.export).toBeUndefined();
+    });
+
+    it("is locally linkable — <a> resolves to the externalDFN", async () => {
+      const body = `
+        <section id="dfns">
+          <h2>Definitions</h2>
+          <p><dfn id="ext" class="externalDFN">borrowed term</dfn></p>
+          <p id="link-para"><a>borrowed term</a></p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const anchor = doc.querySelector("#link-para a");
+      expect(anchor.getAttribute("href")).toBe("#ext");
+      expect(anchor.classList).toContain("internalDFN");
+    });
+  });
 });
