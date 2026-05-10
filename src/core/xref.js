@@ -14,7 +14,7 @@
  * @typedef {import('core/xref').Response} Response
  * @typedef {import('core/xref').SearchResultEntry} SearchResultEntry
  * @typedef {Map<string, { elems: HTMLElement[], results: SearchResultEntry[], query: RequestEntry }>} ErrorCollection
- * @typedef {{ ambiguous: ErrorCollection, notFound: ErrorCollection }} Errors
+ * @typedef {{ ambiguous: ErrorCollection, notFound: ErrorCollection, sameSpecDuplicate: ErrorCollection }} Errors
  */
 import {
   POSSESSIVE_SUFFIX,
@@ -25,6 +25,7 @@ import {
   nonNormativeSelector,
   norm as normalize,
   showError,
+  showWarning,
 } from "./utils.js";
 import { cacheXrefData, resolveXrefCache } from "./xref-db.js";
 import { possibleExternalLinks } from "./link-to-dfn.js";
@@ -425,7 +426,11 @@ function isNormative(elem) {
  */
 function addDataCiteToTerms(elems, queryKeys, data, conf) {
   /** @type {Errors} */
-  const errors = { ambiguous: new Map(), notFound: new Map() };
+  const errors = {
+    ambiguous: new Map(),
+    notFound: new Map(),
+    sameSpecDuplicate: new Map(),
+  };
 
   for (let i = 0, l = elems.length; i < l; i++) {
     if (elems[i].closest("[data-no-xref]")) continue;
@@ -437,16 +442,36 @@ function addDataCiteToTerms(elems, queryKeys, data, conf) {
     const results = data.get(id) ?? [];
     if (results.length === 1) {
       addDataCite(elem, query, results[0], conf);
-    } else {
-      const collector = errors[results.length === 0 ? "notFound" : "ambiguous"];
-      if (!collector.has(id)) {
-        collector.set(id, { elems: [], results, query });
+    } else if (results.length > 1) {
+      const uniqueSpecs = new Set(results.map(r => r.shortname));
+      if (uniqueSpecs.size === 1) {
+        // All results are from the same spec: data quality issue in that spec.
+        // Use the first result so the link still resolves, but warn the author.
+        addDataCite(elem, query, results[0], conf);
+        addToErrorCollector(errors.sameSpecDuplicate, id, elem, results, query);
+      } else {
+        addToErrorCollector(errors.ambiguous, id, elem, results, query);
       }
-      collector.get(id)?.elems.push(elem);
+    } else {
+      addToErrorCollector(errors.notFound, id, elem, results, query);
     }
   }
 
   showErrors(errors);
+}
+
+/**
+ * @param {ErrorCollection} collector
+ * @param {string} id
+ * @param {HTMLElement} elem
+ * @param {SearchResultEntry[]} results
+ * @param {RequestEntry} query
+ */
+function addToErrorCollector(collector, id, elem, results, query) {
+  if (!collector.has(id)) {
+    collector.set(id, { elems: [], results, query });
+  }
+  collector.get(id)?.elems.push(elem);
 }
 
 /**
@@ -517,7 +542,7 @@ function addToReferences(elem, cite, normative, term, conf) {
 }
 
 /** @param {Errors} errors */
-function showErrors({ ambiguous, notFound }) {
+function showErrors({ ambiguous, notFound, sameSpecDuplicate }) {
   /**
    * @param {string} term
    * @param {RequestEntry} query
@@ -558,6 +583,17 @@ function showErrors({ ambiguous, notFound }) {
     showError(msg, name, { title, elements: elems, hint });
   }
 
+  for (const { query, elems, results } of sameSpecDuplicate.values()) {
+    const [{ shortname }] = results;
+    const originalTerm = getTermFromElement(elems[0]);
+    const forParent = query.for ? `, for **"${query.for}"**, ` : "";
+    const msg =
+      `"**${originalTerm}**"${forParent} has duplicate definitions in **[${shortname}]**. ` +
+      `This is likely a data issue in that specification. Using the first definition found.`;
+    const title = "Duplicate definition in cited spec.";
+    showWarning(msg, name, { title, elements: elems });
+  }
+
   for (const { query, elems, results } of ambiguous.values()) {
     const specs = [...new Set(results.map(entry => entry.shortname))].sort();
     const specsString = joinAnd(specs, s => `**[${s}]**`);
@@ -575,7 +611,7 @@ function showErrors({ ambiguous, notFound }) {
 }
 
 /** @param {RequestEntry} obj */
-function objectHash(obj) {
+export function objectHash(obj) {
   const str = JSON.stringify(obj, Object.keys(obj).sort());
   const buffer = new TextEncoder().encode(str);
   return crypto.subtle.digest("SHA-1", buffer).then(bufferToHexString);

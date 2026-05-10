@@ -159,6 +159,28 @@
           "uri": "#ascii-alphanumeric"
         }
       ]
+    },
+    {
+      "id": "18efca57004f2376dcfa7651435f5bccbb1b600c",
+      "query": {
+        "term": "scripting",
+        "types": ["_CONCEPT_"],
+        "id": "18efca57004f2376dcfa7651435f5bccbb1b600c"
+      },
+      "result": [
+        {
+          "shortname": "html",
+          "type": "dfn",
+          "normative": true,
+          "uri": "#concept-scripting-section"
+        },
+        {
+          "shortname": "html",
+          "type": "dfn",
+          "normative": true,
+          "uri": "scripting.html#concept-scripting-section"
+        }
+      ]
     }
   ]
 }

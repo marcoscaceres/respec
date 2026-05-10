@@ -6,6 +6,7 @@ import {
   makeDefaultBody,
   makeRSDoc,
   makeStandardOps,
+  warningFilters,
 } from "../SpecHelper.js";
 import { clearXrefData } from "../../../src/core/xref-db.js";
 
@@ -141,19 +142,25 @@ describe("Core — xref", () => {
     expect(dfn3.href).toBe("https://html.spec.whatwg.org/multipage/");
   });
 
-  it("shows error if cannot resolve by data-cite", async () => {
-    const body = `
-      <section data-cite="html">
-        <p id="test"><a>script</a> twice in HTML spec.</p>
-      </section>
-    `;
-    const config = { xref: ["HTML"], localBiblio };
+  it("shows warning and resolves to first result when same-spec duplicates exist", async () => {
+    const warnings = warningFilters.filter("core/xref");
+    const body = `<section><p id="test"><a>scripting</a></p></section>`;
+    const config = {
+      xref: { url: `${location.origin}/tests/data/xref/refs.json` },
+      localBiblio: {
+        html: { id: "HTML", href: "https://html.spec.whatwg.org/multipage/" },
+      },
+    };
     const ops = makeStandardOps(config, body);
     const doc = await makeRSDoc(ops);
 
     const link = doc.querySelector("#test a");
     expect(link.classList).toContain("respec-offending-element");
-    expect(link.title).toBe("Definition is ambiguous.");
+    expect(link.title).toBe("Duplicate definition in cited spec.");
+    expect(link.href).toBeTruthy();
+    const docWarnings = warnings(doc);
+    expect(docWarnings).toHaveSize(1);
+    expect(docWarnings[0].message).toContain("duplicate definitions");
   });
 
   it("uses data-cite fallbacks", async () => {
