@@ -1,6 +1,11 @@
 "use strict";
 
-import { cgbgStatus, tagStatus } from "../../../src/w3c/headers.js";
+import {
+  W3CNotes,
+  cgbgStatus,
+  registryTrackStatus,
+  tagStatus,
+} from "../../../src/w3c/headers.js";
 
 import {
   errorFilters,
@@ -176,5 +181,213 @@ describe("W3C — Defaults", () => {
         .withContext(specStatus)
         .toContain("s not associated with a [W3C group](");
     }
+  });
+
+  describe("group type / specStatus validation", () => {
+    describe("CG", () => {
+      it("errors when a CG uses a WG-only status", async () => {
+        const ops = makeStandardOps({ group: "wicg", specStatus: "WD" });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Community Group documents can't use")
+        );
+        expect(mismatchError).toBeTruthy();
+        expect(doc.defaultView.respecConfig.specStatus).toBe("CG-DRAFT");
+      });
+
+      it("does not error when a CG uses CG-DRAFT", async () => {
+        const ops = makeStandardOps({ group: "wicg", specStatus: "CG-DRAFT" });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Community Group documents can't use")
+        );
+        expect(mismatchError).toBeUndefined();
+      });
+
+      it("does not error when a CG uses unofficial", async () => {
+        const ops = makeStandardOps({
+          group: "wicg",
+          specStatus: "unofficial",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Community Group documents can't use")
+        );
+        expect(mismatchError).toBeUndefined();
+      });
+    });
+
+    describe("BG", () => {
+      it("errors when a BG uses a WG-only status", async () => {
+        // publishingbg is the W3C Publishing Business Group
+        const ops = makeStandardOps({
+          group: "publishingbg",
+          specStatus: "ED",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Business Group documents can't use")
+        );
+        expect(mismatchError).toBeTruthy();
+        expect(doc.defaultView.respecConfig.specStatus).toBe("BG-DRAFT");
+      });
+    });
+
+    describe("WG", () => {
+      it("errors when a WG uses a CG-only status", async () => {
+        const ops = makeStandardOps({
+          group: "webapps",
+          specStatus: "CG-DRAFT",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Working Group documents can't use")
+        );
+        expect(mismatchError).toBeTruthy();
+      });
+
+      it("does not error when a WG uses WD", async () => {
+        const ops = makeStandardOps({ group: "webapps", specStatus: "WD" });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Working Group documents can't use")
+        );
+        expect(mismatchError).toBeUndefined();
+      });
+
+      it("does not error when a WG uses ED", async () => {
+        const ops = makeStandardOps({ group: "webapps", specStatus: "ED" });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Working Group documents can't use")
+        );
+        expect(mismatchError).toBeUndefined();
+      });
+    });
+
+    describe("IG", () => {
+      it("errors when an IG uses a Rec-track status", async () => {
+        // Inject groupType directly: IGs don't appear in test fixtures, so we
+        // bypass the API and set groupType + wgId to simulate a resolved IG.
+        for (const specStatus of ["WD", "CR", "PR", "REC"]) {
+          const ops = makeStandardOps({
+            groupType: "ig",
+            wgId: "1",
+            specStatus,
+          });
+          const doc = await makeRSDoc(ops);
+          const errors = errorsFilter(doc);
+          const mismatchError = errors.find(e =>
+            e.message.includes("Interest Group documents can't use")
+          );
+          expect(mismatchError)
+            .withContext(`specStatus: ${specStatus}`)
+            .toBeTruthy();
+        }
+      });
+
+      it("does not error when an IG uses a Note-track status", async () => {
+        for (const specStatus of W3CNotes) {
+          const ops = makeStandardOps({
+            groupType: "ig",
+            wgId: "1",
+            specStatus,
+          });
+          const doc = await makeRSDoc(ops);
+          const errors = errorsFilter(doc);
+          const mismatchError = errors.find(e =>
+            e.message.includes("Interest Group documents can't use")
+          );
+          expect(mismatchError)
+            .withContext(`specStatus: ${specStatus}`)
+            .toBeUndefined();
+        }
+      });
+
+      it("does not error when an IG uses ED", async () => {
+        const ops = makeStandardOps({
+          groupType: "ig",
+          wgId: "1",
+          specStatus: "ED",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mismatchError = errors.find(e =>
+          e.message.includes("Interest Group documents can't use")
+        );
+        expect(mismatchError).toBeUndefined();
+      });
+
+      it("does not error when an IG uses a Registry-track status", async () => {
+        for (const specStatus of registryTrackStatus) {
+          const ops = makeStandardOps({
+            groupType: "ig",
+            wgId: "1",
+            specStatus,
+          });
+          const doc = await makeRSDoc(ops);
+          const errors = errorsFilter(doc);
+          const mismatchError = errors.find(e =>
+            e.message.includes("Interest Group documents can't use")
+          );
+          expect(mismatchError)
+            .withContext(`specStatus: ${specStatus}`)
+            .toBeUndefined();
+        }
+      });
+    });
+
+    describe("heterogeneous group arrays", () => {
+      it("errors when group array mixes a CG and a WG", async () => {
+        // Inject groupType array directly to bypass API; this simulates
+        // group: ["wicg", "webapps"] where types resolve to ["cg", "wg"].
+        const ops = makeStandardOps({
+          groupType: ["cg", "wg"],
+          wgId: ["1", "2"],
+          specStatus: "WD",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mixedError = errors.find(e =>
+          e.message.includes("mixes Community/Business Groups")
+        );
+        expect(mixedError).toBeTruthy();
+      });
+
+      it("does not error when group array contains only WGs", async () => {
+        const ops = makeStandardOps({
+          group: ["webapps", "payments"],
+          specStatus: "WD",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mixedError = errors.find(e =>
+          e.message.includes("mixes Community/Business Groups")
+        );
+        expect(mixedError).toBeUndefined();
+      });
+
+      it("does not error when group array contains only CGs", async () => {
+        // Inject groupType array directly to simulate two CGs.
+        const ops = makeStandardOps({
+          groupType: ["cg", "cg"],
+          wgId: ["1", "2"],
+          specStatus: "CG-DRAFT",
+        });
+        const doc = await makeRSDoc(ops);
+        const errors = errorsFilter(doc);
+        const mixedError = errors.find(e =>
+          e.message.includes("mixes Community/Business Groups")
+        );
+        expect(mixedError).toBeUndefined();
+      });
+    });
   });
 });

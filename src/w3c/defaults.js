@@ -135,6 +135,23 @@ function validateStatusForGroup(conf) {
     return;
   }
 
+  // When group is an array, groupType becomes an array. Check for heterogeneous
+  // group arrays mixing community/business groups with working/interest groups,
+  // which is disallowed due to incompatible IPR frameworks.
+  if (Array.isArray(groupType)) {
+    const cgbgTypes = new Set(["cg", "bg"]);
+    const wgigTypes = new Set(["wg", "ig"]);
+    const hasCgBg = groupType.some(t => cgbgTypes.has(t));
+    const hasWgIg = groupType.some(t => wgigTypes.has(t));
+    if (hasCgBg && hasWgIg) {
+      const msg = docLink`The ${"[group]"} configuration option mixes Community/Business Groups with Working/Interest Groups.`;
+      const hint =
+        "CGs and BGs operate under the W3C CLA, while WGs and IGs operate under the W3C Patent Policy. They cannot produce joint deliverables. Use separate documents instead.";
+      showError(msg, name, { hint });
+    }
+    return;
+  }
+
   switch (groupType) {
     case "cg": {
       if (![...cgStatus, "unofficial", "UD"].includes(specStatus)) {
@@ -156,10 +173,26 @@ function validateStatusForGroup(conf) {
       }
       break;
     }
+    case "ig": {
+      const allowedIgStatus = [
+        ...W3CNotes,
+        ...registryTrackStatus,
+        "unofficial",
+        "UD",
+        "ED",
+      ];
+      if (!allowedIgStatus.includes(specStatus)) {
+        const msg = docLink`W3C Interest Group documents can't use \`"${specStatus}"\` for the ${"[specStatus]"} configuration option.`;
+        const supportedStatus = codedJoinOr(allowedIgStatus, { quotes: true });
+        const hint = docLink`Please use one of: ${supportedStatus}. Interest Groups don't publish on the W3C Recommendation track. See ${"[specStatus]"} for details.`;
+        showError(msg, name, { hint });
+      }
+      break;
+    }
     case "wg": {
       if (![...trStatus, "unofficial", "UD", "ED"].includes(specStatus)) {
         const msg = docLink`W3C Working Group documents can't use \`"${specStatus}"\` for the ${"[specStatus]"} configuration option.`;
-        const hint = docLink`Pleas see ${"[specStatus]"} for appropriate status for W3C Working Group documents.`;
+        const hint = docLink`Please see ${"[specStatus]"} for appropriate status for W3C Working Group documents.`;
         showError(msg, name, { hint });
       }
       break;
