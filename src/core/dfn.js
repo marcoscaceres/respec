@@ -21,6 +21,16 @@ import { slotRegex } from "./inline-idl-parser.js";
 
 export const name = "core/dfn";
 
+/**
+ * Matches a fully qualified method signature in dfn text content, e.g.:
+ *   watchPosition(successCallback, errorCallback)
+ *   watchPosition()
+ *
+ * Group 1: method name (identifier)
+ * Group 2: argument list content (may be empty)
+ */
+const qualifiedMethodRegex = /^([A-Za-z_$][A-Za-z0-9_$]*)\(([^)]*)\)$/;
+
 /** @type {Map<string, { requiresFor: boolean, validator?: DefinitionValidator, associateWith?: string}>}  */
 const knownTypesMap = new Map([
   ["abstract-op", { requiresFor: false }],
@@ -59,6 +69,7 @@ const knownTypes = [...knownTypesMap.keys()];
 
 export function run() {
   for (const dfn of document.querySelectorAll("dfn")) {
+    processQualifiedMethodDfn(dfn);
     const titles = getDfnTitles(dfn);
     registerDefinition(dfn, titles);
 
@@ -234,4 +245,81 @@ function processAsInternalSlot(title, dfn) {
     return "dfn";
   }
   return dfnType;
+}
+
+/**
+ * Detects whether a dfn has a fully qualified method signature as its text
+ * content — e.g., `watchPosition(successCallback, errorCallback)` — and, if
+ * so, enriches the element before the normal title-computation pass:
+ *
+ *   1. Sets `data-lt` to include the bare-name form (`watchPosition()`) so
+ *      links like `<a>watchPosition()</a>` resolve to this dfn.
+ *   2. Adds the full signature to `data-lt` if it differs from `name()`.
+ *   3. Wraps each comma-separated argument name in a `<var>` element.
+ *   4. Sets `data-dfn-type="method"` when the author has not set one.
+ *
+ * This function is a no-op when:
+ *   - the dfn already carries a `data-lt` attribute (author override)
+ *   - the text doesn't match an identifier followed by `(...)` exactly
+ *   - the text matches the internal-slot pattern (`[[...]]`)
+ *
+ * @param {HTMLElement} dfn
+ */
+function processQualifiedMethodDfn(dfn) {
+  // Respect explicit author overrides.
+  if (dfn.dataset.lt) return;
+
+  const rawText = norm(dfn.textContent);
+
+  // Must look like an identifier with parens; internal slots are handled
+  // separately by processAsInternalSlot.
+  if (slotRegex.test(rawText)) return;
+
+  const match = qualifiedMethodRegex.exec(rawText);
+  if (!match) return;
+
+  const [, methodName, argsText] = match;
+  const bareMethod = `${methodName}()`;
+
+  // Build the data-lt value. The bare method form is always included.
+  // When the dfn text already *is* `name()` we only need that form in lt;
+  // otherwise include the full signature as well so it is linkable.
+  const ltValues = new Set([bareMethod]);
+  if (rawText !== bareMethod) {
+    ltValues.add(rawText);
+  }
+  dfn.dataset.lt = [...ltValues].join("|");
+
+  // The bare identifier (without parens) is a non-exported local alias so
+  // that `<a>methodName</a>` can still resolve to this definition.
+  const existingLocalLt = dfn.dataset.localLt
+    ? dfn.dataset.localLt.split("|")
+    : [];
+  if (!existingLocalLt.includes(methodName)) {
+    dfn.dataset.localLt = [...existingLocalLt, methodName].join("|");
+  }
+
+  // Wrap argument names in <var> when the argument list is non-empty.
+  const trimmedArgs = argsText.trim();
+  if (trimmedArgs) {
+    const args = trimmedArgs.split(/\s*,\s*/);
+    // Re-build the dfn's inner content: methodName( <var>arg1</var>, ... )
+    const { ownerDocument } = dfn;
+    dfn.textContent = "";
+    dfn.append(`${methodName}(`);
+    args.forEach((arg, i) => {
+      const varElem = ownerDocument.createElement("var");
+      varElem.textContent = arg;
+      dfn.append(varElem);
+      if (i < args.length - 1) {
+        dfn.append(", ");
+      }
+    });
+    dfn.append(")");
+  }
+
+  // Default the type to "method" when the author hasn't specified one.
+  if (!dfn.dataset.dfnType) {
+    dfn.dataset.dfnType = "method";
+  }
 }

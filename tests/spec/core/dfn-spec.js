@@ -779,4 +779,138 @@ describe("Core — Definitions", () => {
       expect(dfn.dataset.noexport).toBeUndefined();
     });
   });
+
+  describe("qualified method dfn", () => {
+    it("handles fully qualified method with arguments", async () => {
+      const body = `
+        <section data-dfn-for="Geolocation" id="geo">
+          <h2>Geolocation</h2>
+          <pre class="idl">
+            [Exposed=Window]
+            interface Geolocation {};
+          </pre>
+          <p id="wp">
+            <dfn id="watchPosition">watchPosition(successCallback, errorCallback)</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const dfn = doc.getElementById("watchPosition");
+
+      // data-lt must include both linking forms
+      expect(dfn.dataset.lt).toContain("watchPosition()");
+      expect(dfn.dataset.lt).toContain(
+        "watchPosition(successCallback, errorCallback)"
+      );
+
+      // data-local-lt must include the bare name
+      expect(dfn.dataset.localLt).toContain("watchPosition");
+
+      // dfn-type is auto-set to method
+      expect(dfn.dataset.dfnType).toBe("method");
+
+      // argument names are wrapped in <var>
+      const vars = dfn.querySelectorAll("var");
+      expect(vars).toHaveSize(2);
+      expect(vars[0].textContent).toBe("successCallback");
+      expect(vars[1].textContent).toBe("errorCallback");
+    });
+
+    it("handles a method dfn with empty parens", async () => {
+      const body = `
+        <section data-dfn-for="Foo" id="foo">
+          <h2>Foo</h2>
+          <pre class="idl">
+            [Exposed=Window]
+            interface Foo {};
+          </pre>
+          <p id="bar">
+            <dfn id="bar-dfn">bar()</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const dfn = doc.getElementById("bar-dfn");
+
+      // dfn-type is auto-set to method
+      expect(dfn.dataset.dfnType).toBe("method");
+
+      // bare name is in local-lt
+      expect(dfn.dataset.localLt).toContain("bar");
+
+      // no <var> elements for empty parens
+      expect(dfn.querySelectorAll("var")).toHaveSize(0);
+    });
+
+    it("links to a qualified method dfn via bare-method name", async () => {
+      const body = `
+        <section data-dfn-for="Geolocation" id="geo">
+          <h2>Geolocation</h2>
+          <pre class="idl">
+            [Exposed=Window]
+            interface Geolocation {};
+          </pre>
+          <p>
+            <dfn id="wp-dfn">watchPosition(successCallback, errorCallback)</dfn>
+          </p>
+          <p id="links">
+            <a data-link-for="Geolocation">watchPosition()</a>
+            <a data-link-for="Geolocation">watchPosition(successCallback, errorCallback)</a>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const links = doc.querySelectorAll("#links a");
+
+      // Both links should resolve to the dfn
+      expect(links[0].getAttribute("href")).toBe("#wp-dfn");
+      expect(links[1].getAttribute("href")).toBe("#wp-dfn");
+    });
+
+    it("does not process a dfn that already has data-lt", async () => {
+      const body = `
+        <section id="custom">
+          <h2>Custom</h2>
+          <p>
+            <dfn id="custom-lt" data-lt="myMethod()|custom alias">myMethod(arg)</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const dfn = doc.getElementById("custom-lt");
+
+      // data-lt should contain the author's values
+      expect(dfn.dataset.lt).toContain("myMethod()");
+      expect(dfn.dataset.lt).toContain("custom alias");
+
+      // no <var> wrapping since processQualifiedMethodDfn was skipped
+      expect(dfn.querySelectorAll("var")).toHaveSize(0);
+    });
+
+    it("does not process internal slot dfns", async () => {
+      const body = `
+        <section data-dfn-for="Test" id="slots">
+          <h2>Internal slots</h2>
+          <pre class="idl">
+            [Exposed=Window]
+            interface Test {};
+          </pre>
+          <p>
+            <dfn id="slot-method">[[\\internalMethod]](arg)</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const dfn = doc.getElementById("slot-method");
+
+      // Internal slots are handled by their own code path;
+      // no <var> wrapping from processQualifiedMethodDfn.
+      expect(dfn.querySelectorAll("var")).toHaveSize(0);
+    });
+  });
 });
