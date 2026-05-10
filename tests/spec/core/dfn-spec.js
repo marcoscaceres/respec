@@ -781,7 +781,7 @@ describe("Core — Definitions", () => {
   });
 
   describe("data-old-ids", () => {
-    it("inserts hidden span elements for each old ID", async () => {
+    it("inserts span elements for each old ID", async () => {
       const body = `
         <section>
           <h2>Terms</h2>
@@ -804,7 +804,7 @@ describe("Core — Definitions", () => {
       expect(evenOlderTerm.classList.contains("respec-old-id")).toBeTrue();
     });
 
-    it("inserts old-id spans immediately before the dfn", async () => {
+    it("prepends old-id spans inside the dfn", async () => {
       const body = `
         <section>
           <h2>Terms</h2>
@@ -818,7 +818,8 @@ describe("Core — Definitions", () => {
 
       const dfn = doc.getElementById("dfn-new-term");
       const span = doc.getElementById("old-term");
-      expect(span.nextElementSibling).toBe(dfn);
+      expect(span.parentElement).toBe(dfn);
+      expect(dfn.firstElementChild).toBe(span);
     });
 
     it("ignores empty entries in comma-separated list", async () => {
