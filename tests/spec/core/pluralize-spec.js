@@ -236,4 +236,44 @@ describe("Core - Pluralize", () => {
     expect(goodLink.getAttribute("href")).toBe("#dfn-baz");
     expect(badLink.classList).toContain("respec-offending-element");
   });
+
+  it("pluralizes scoped dfns linked with [= for/term =] syntax", async () => {
+    // Regression test for https://github.com/speced/respec/issues/2818.
+    // [=set/contains=] should link to <dfn data-dfn-for="set">contain</dfn>
+    // when pluralize is true.
+    const body = `
+      <section id="section">
+        <dfn id="dfn-contain" data-dfn-for="set">contain</dfn> is a concept.
+        <p id="plural-link">[=set/contains=]</p>
+      </section>
+    `;
+    const ops = makeStandardOps({ pluralize: true }, body);
+    const doc = await makeRSDoc(ops);
+
+    const link = doc.querySelector("#plural-link a");
+    expect(link).toBeTruthy();
+    // [=set/contains=] → links to dfn "contain" via pluralization
+    expect(link.getAttribute("href")).toBe("#dfn-contain");
+    expect(link.classList).not.toContain("respec-offending-element");
+  });
+
+  it("singularizes scoped dfns linked with [= for/term =] syntax", async () => {
+    // Regression test for https://github.com/speced/respec/issues/2818.
+    // [=set/contain=] should link to <dfn data-dfn-for="set">contains</dfn>
+    // when pluralize is true.
+    const body = `
+      <section id="section">
+        <dfn id="dfn-contains" data-dfn-for="set">contains</dfn> is a concept.
+        <p id="singular-link">[=set/contain=]</p>
+      </section>
+    `;
+    const ops = makeStandardOps({ pluralize: true }, body);
+    const doc = await makeRSDoc(ops);
+
+    const link = doc.querySelector("#singular-link a");
+    expect(link).toBeTruthy();
+    // [=set/contain=] → links to dfn "contains" via singularization
+    expect(link.getAttribute("href")).toBe("#dfn-contains");
+    expect(link.classList).not.toContain("respec-offending-element");
+  });
 });
