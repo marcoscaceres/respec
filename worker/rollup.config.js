@@ -16,6 +16,8 @@ export default [
     input: "worker/respec-worker.js",
     output: {
       dir: "builds/",
+      format: "es",
     },
+    plugins: [resolve(), commonjs()],
   },
 ];
