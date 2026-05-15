@@ -26,9 +26,6 @@ importers:
 
   .:
     dependencies:
-      colors:
-        specifier: 1.4.0
-        version: 1.4.0
       finalhandler:
         specifier: ^2.1.1
         version: 2.1.1
@@ -869,10 +866,6 @@ packages:
 
   colors@1.0.3:
     resolution: {integrity: sha512-pFGrxThWcWQ2MsAz6RtgeWe4NK2kUE1WfsrvvlctdII745EW9I0yflqhe7++M5LEc7bV2c/9/5zc8sFcpL0Drw==}
-    engines: {node: '>=0.1.90'}
-
-  colors@1.4.0:
-    resolution: {integrity: sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==}
     engines: {node: '>=0.1.90'}
 
   commander@14.0.3:
@@ -3447,8 +3440,6 @@ snapshots:
   colorette@2.0.20: {}
 
   colors@1.0.3: {}
-
-  colors@1.4.0: {}
 
   commander@14.0.3: {}
 
