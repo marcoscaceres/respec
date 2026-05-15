@@ -73,6 +73,7 @@ const inlineExpansion = /(?:\[\[\[(?:!|\\|\?)?#?[\w-.]+\]\]\])/; // [[[expand]]]
 const inlineAnchor = /(?:\[=[^=]+=\])/; // Inline [= For/link =]
 const inlineElement = /(?:\[\^[^^]+\^\])/; // Inline [^element^]
 const inlineCddlReference = /(?:\{\^[^}^]+\^\})/; // {^cddl-type^}, {^type/key^}
+const inlineHttpHeader = /(?:\[:[^:]+:\])/; // Inline [: HTTP-Header :]
 
 /**
  * @example [^iframe^] // [^element^]
@@ -147,6 +148,45 @@ function inlineCddlMatches(matched) {
       data-xref-for="${typeName}"
       data-link-for="${typeName}"
       >${member}</a
+    ></code
+  >`;
+}
+
+/**
+ * @example [: Content-Type :] => <code><a data-link-type="http-header">Content-Type</a></code>
+ * @example [: Accept|the Accept header :] => display text "the Accept header"
+ * @param {string} matched
+ * @return {HTMLElement}
+ */
+function inlineHttpHeaderMatches(matched) {
+  let content = matched.slice(2, -2).trim(); // Chop [: :]
+
+  if (!content) {
+    showWarning("Empty `[: :]` shorthand will not resolve.", name);
+    return html`<code><a data-link-type="http-header"></a></code>`;
+  }
+
+  let typeHint = "";
+  if (content.includes("!!")) {
+    [content, typeHint] = content.split("!!", 2);
+    content = content.trim();
+    typeHint = typeHint.trim();
+  }
+  if (typeHint && typeHint !== "http-header") {
+    showWarning(
+      `Unrecognized type hint \`!!${typeHint}\` in \`[: ${matched.slice(2, -2).trim()} :]\`. ` +
+        `Only \`!!http-header\` is valid.`,
+      name
+    );
+  }
+
+  const [linkingText, text] = content.includes("|")
+    ? content.split("|", 2).map(s => s.trim())
+    : [null, content];
+  const processedContent = processInlineContent(text);
+  return html`<code
+    ><a data-link-type="http-header" data-lt="${linkingText}"
+      >${processedContent}</a
     ></code
   >`;
 }
@@ -346,6 +386,7 @@ export function run(conf) {
         keywords,
         inlineIdlReference,
         inlineCddlReference,
+        inlineHttpHeader,
         inlineVariable,
         inlineCitation,
         inlineExpansion,
@@ -382,6 +423,9 @@ export function run(conf) {
           break;
         case t.startsWith("|"):
           df.append(inlineVariableMatches(t));
+          break;
+        case t.startsWith("[:"):
+          df.append(inlineHttpHeaderMatches(t));
           break;
         case t.startsWith("[="):
           df.append(inlineAnchorMatches(t));
