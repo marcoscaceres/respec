@@ -213,7 +213,7 @@ function showRef(reference) {
   const { ref, refcontent } = reference;
   const refId = bibRefId(ref);
   const result = html`
-    <dt id="${refId}">[${ref}]</dt>
+    <dt id="${refId}">[${ref.toUpperCase()}]</dt>
     <dd>
       ${refcontent
         ? { html: stringifyReference(refcontent) }
