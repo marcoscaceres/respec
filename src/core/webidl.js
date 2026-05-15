@@ -243,7 +243,7 @@ function resolveNameAndId(defn, parent) {
     }
     case "constructor":
     case "operation": {
-      const overload = resolveOverload(name, parent);
+      const overload = resolveOverload(name, parent, defn);
       if (overload) {
         name += overload;
         idlId += overload;
@@ -269,7 +269,7 @@ function resolvePartial(defn) {
   return `-partial-${idlPartials[defn.name]}`;
 }
 
-function resolveOverload(name, parentName) {
+function resolveOverload(name, parentName, defn) {
   const qualifiedName = `${parentName}.${name}`;
   const fullyQualifiedName = `${qualifiedName}()`;
   let overload;
@@ -279,7 +279,13 @@ function resolveOverload(name, parentName) {
   if (!operationNames[qualifiedName]) {
     operationNames[qualifiedName] = 0;
   } else {
-    overload = `!overload-${operationNames[qualifiedName]}`;
+    const types = (defn.arguments || [])
+      .map(arg => {
+        const t = arg.idlType;
+        return typeof t.idlType === "string" ? t.idlType : "object";
+      })
+      .join("-");
+    overload = types ? `!overload-${types.toLowerCase()}` : "!overload";
   }
   operationNames[fullyQualifiedName] += 1;
   operationNames[qualifiedName] += 1;
