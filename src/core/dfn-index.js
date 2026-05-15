@@ -152,7 +152,9 @@ function collectLocalTerms() {
   /** @type {Map<string, HTMLElement[]>} */
   const data = new Map();
   /** @type {NodeListOf<HTMLElement>} */
-  const elems = document.querySelectorAll("dfn:not([data-cite])");
+  const elems = document.querySelectorAll(
+    "dfn:not([data-cite]):not([data-no-index])"
+  );
   for (const elem of elems) {
     if (!elem.id) continue;
     const text = norm(elem.textContent);
@@ -342,6 +344,9 @@ function collectExternalTerms() {
   const elements = document.querySelectorAll(`a[data-cite]`);
   for (const elem of elements) {
     if (!elem.dataset.cite) {
+      continue;
+    }
+    if (elem.hasAttribute("data-no-index")) {
       continue;
     }
     const { cite, citeFrag, xrefType, linkType } = elem.dataset;
