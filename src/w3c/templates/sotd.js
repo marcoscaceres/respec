@@ -579,19 +579,19 @@ function getWgHTML(conf) {
  * @param {SotdOpts} opts
  */
 export function linkToCommunity(conf, opts) {
-  if (!conf.github && !conf.wgPublicList) {
+  if (!conf.github && !conf.wgPublicList && !conf.issueURL) {
     return;
   }
   return html`<p>
-    ${conf.github
+    ${conf.github || conf.issueURL
       ? html`
-          <a href="${conf.issueBase}">GitHub Issues</a> are preferred for
-          discussion of this specification.
+          <a href="${conf.issueURL ?? conf.issueBase}">GitHub Issues</a> are
+          preferred for discussion of this specification.
         `
       : ""}
     ${conf.wgPublicList
       ? html`
-          ${conf.github && conf.wgPublicList
+          ${(conf.github || conf.issueURL) && conf.wgPublicList
             ? "Alternatively, you can send comments to our mailing list."
             : "Comments regarding this document are welcome."}
           Please send them to

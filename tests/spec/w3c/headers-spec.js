@@ -2528,6 +2528,81 @@ describe("W3C — Headers", () => {
       expect(archive).toBeTruthy();
       expect(archive.textContent.trim()).toBe("archives");
     });
+
+    describe("issueURL", () => {
+      it("overrides the new issue link in Feedback when github is set", async () => {
+        const issueURL = "https://example.com/custom-issues";
+        const doc = await makeRSDoc(
+          makeStandardOps({
+            github: "speced/respec",
+            issueURL,
+          })
+        );
+        const newIssueLink = doc.querySelector(`.head a[href='${issueURL}']`);
+        expect(newIssueLink).toBeTruthy();
+        expect(newIssueLink.textContent.trim()).toBe("new issue");
+        // The auto-generated new issues URL should not appear
+        expect(
+          doc.querySelector(
+            ".head a[href='https://github.com/speced/respec/issues/new/choose']"
+          )
+        ).toBeNull();
+      });
+
+      it("shows a standalone File an issue link in Feedback when github is not set", async () => {
+        const issueURL = "https://example.com/file-issue";
+        const doc = await makeRSDoc(
+          makeStandardOps({
+            issueURL,
+            specStatus: "WD",
+            group: "webapps",
+          })
+        );
+        const [dt] = contains(doc, ".head dt", "Feedback:");
+        expect(dt).toBeTruthy();
+        const dd = dt.nextElementSibling;
+        const fileIssueLink = dd.querySelector(`a[href='${issueURL}']`);
+        expect(fileIssueLink).toBeTruthy();
+        expect(fileIssueLink.textContent.trim()).toBe("File an issue");
+      });
+
+      it("overrides the GitHub Issues link in SoTD when github is set (CG-DRAFT)", async () => {
+        const issueURL = "https://example.com/sotd-issues";
+        const doc = await makeRSDoc(
+          makeStandardOps({
+            github: "speced/respec",
+            issueURL,
+            specStatus: "CG-DRAFT",
+            group: "wicg",
+          })
+        );
+        const sotd = doc.getElementById("sotd");
+        const link = sotd.querySelector(`a[href='${issueURL}']`);
+        expect(link).toBeTruthy();
+        expect(link.textContent.trim()).toBe("GitHub Issues");
+        // The auto-generated issueBase should not appear in SoTD
+        expect(
+          sotd.querySelector(
+            "a[href='https://github.com/speced/respec/issues/']"
+          )
+        ).toBeNull();
+      });
+
+      it("shows a GitHub Issues link in SoTD when only issueURL is set (CG-DRAFT, no github)", async () => {
+        const issueURL = "https://example.com/issues-standalone";
+        const doc = await makeRSDoc(
+          makeStandardOps({
+            issueURL,
+            specStatus: "CG-DRAFT",
+            group: "wicg",
+          })
+        );
+        const sotd = doc.getElementById("sotd");
+        const link = sotd.querySelector(`a[href='${issueURL}']`);
+        expect(link).toBeTruthy();
+        expect(link.textContent.trim()).toBe("GitHub Issues");
+      });
+    });
   });
 
   describe("History", () => {
