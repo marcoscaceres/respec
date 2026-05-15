@@ -7,6 +7,7 @@
 import {
   addId,
   getIntlData,
+  getIntlDataForKey,
   getPreviousSections,
   renameElement,
   showWarning,
@@ -97,11 +98,19 @@ function collectFigures() {
 function decorateFigure(figure, caption, i) {
   const title = caption.textContent;
   addId(figure, "fig", title);
+  // Use the language of the nearest ancestor with a lang attribute, falling
+  // back to the document language. This ensures figures inside sections with
+  // a different lang (e.g. lang="ja" inside html lang="en") get the right label.
+  const elementLang =
+    figure.closest("[lang]")?.getAttribute("lang") ??
+    document.documentElement.lang;
+  const figLabel =
+    getIntlDataForKey(localizationStrings, "fig", elementLang) ?? l10n.fig;
   // set proper caption title
   wrapInner(caption, html`<span class="fig-title"></span>`);
   caption.prepend(
     html`<a class="self-link" href="#${figure.id}"
-      >${l10n.fig}<bdi class="figno">${i + 1}</bdi></a
+      >${figLabel}<bdi class="figno">${i + 1}</bdi></a
     >`,
     " "
   );
