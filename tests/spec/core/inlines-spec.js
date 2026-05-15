@@ -1,6 +1,11 @@
 "use strict";
 
-import { flushIframes, makeRSDoc, makeStandardOps } from "../SpecHelper.js";
+import {
+  flushIframes,
+  makeRSDoc,
+  makeStandardOps,
+  warningFilters,
+} from "../SpecHelper.js";
 
 describe("Core - Inlines", () => {
   afterAll(flushIframes);
@@ -696,5 +701,79 @@ describe("Core - Inlines", () => {
     const withSpace = doc.getElementById("with-space");
     expect(withSpace.querySelector("a")).toBeNull();
     expect(withSpace.textContent.trim()).toBe("{{ Window }}");
+  });
+
+  it("supports |text display override in [^element^]", async () => {
+    const body = `
+      <section>
+        <p id="basic">[^ iframe|the iframe element ^]</p>
+        <p id="attr">[^ iframe/allow|the allow attribute ^]</p>
+      </section>
+    `;
+    const config = { xref: ["HTML"] };
+    const doc = await makeRSDoc(makeStandardOps(config, body));
+
+    const basic = doc.querySelector("#basic code a");
+    expect(basic).toBeTruthy();
+    expect(basic.textContent).toBe("the iframe element");
+    expect(basic.dataset.xrefType).toBe("element");
+    expect(basic.dataset.lt).toBe("iframe");
+
+    const attr = doc.querySelector("#attr code a");
+    expect(attr).toBeTruthy();
+    expect(attr.textContent).toBe("the allow attribute");
+    expect(attr.dataset.xrefType).toBe("element-attr");
+    expect(attr.dataset.lt).toBe("allow");
+  });
+
+  it("supports !!type disambiguation in [^element^]", async () => {
+    const body = `
+      <section>
+        <p id="explicit">[^ iframe!!element ^]</p>
+        <p id="attr-explicit">[^ input/type!!element-attr ^]</p>
+      </section>
+    `;
+    const config = { xref: ["HTML"] };
+    const doc = await makeRSDoc(makeStandardOps(config, body));
+
+    const explicit = doc.querySelector("#explicit code a");
+    expect(explicit).toBeTruthy();
+    expect(explicit.dataset.xrefType).toBe("element");
+    expect(explicit.dataset.linkType).toBe("element");
+
+    const attrExplicit = doc.querySelector("#attr-explicit code a");
+    expect(attrExplicit).toBeTruthy();
+    expect(attrExplicit.dataset.xrefType).toBe("element-attr");
+    expect(attrExplicit.dataset.linkType).toBe("element-attr");
+  });
+
+  it("warns on invalid !!type in [^element^]", async () => {
+    const body = `
+      <section>
+        <p id="test">[^ iframe!!nonsense ^]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const link = doc.querySelector("#test code a");
+    expect(link).toBeTruthy();
+    expect(link.dataset.xrefType).toBe("element");
+    const warnings = warningFilters.filter("core/inlines")(doc);
+    expect(warnings).toHaveSize(1);
+    expect(warnings[0].message).toContain("!!nonsense");
+  });
+
+  it("supports combined [^ elem!!type|text ^] syntax", async () => {
+    const body = `
+      <section>
+        <p id="test">[^ iframe!!element|the iframe element ^]</p>
+      </section>
+    `;
+    const config = { xref: ["HTML"] };
+    const doc = await makeRSDoc(makeStandardOps(config, body));
+    const link = doc.querySelector("#test code a");
+    expect(link).toBeTruthy();
+    expect(link.textContent).toBe("the iframe element");
+    expect(link.dataset.xrefType).toBe("element");
+    expect(link.dataset.lt).toBe("iframe");
   });
 });
