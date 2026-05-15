@@ -777,4 +777,110 @@ describe("Core — Definitions", () => {
       expect(dfn.dataset.noexport).toBeUndefined();
     });
   });
+
+  describe("data-old-ids", () => {
+    it("inserts span elements for each old ID", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p id="container">
+            <dfn id="dfn-new-term" data-old-ids="old-term, even-older-term">new term name</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+
+      const oldTerm = doc.getElementById("old-term");
+      expect(oldTerm).not.toBeNull();
+      expect(oldTerm.tagName).toBe("SPAN");
+      expect(oldTerm.classList.contains("respec-old-id")).toBeTrue();
+
+      const evenOlderTerm = doc.getElementById("even-older-term");
+      expect(evenOlderTerm).not.toBeNull();
+      expect(evenOlderTerm.tagName).toBe("SPAN");
+      expect(evenOlderTerm.classList.contains("respec-old-id")).toBeTrue();
+    });
+
+    it("prepends old-id spans inside the dfn", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p id="container">
+            <dfn id="dfn-new-term" data-old-ids="old-term">new term name</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+
+      const dfn = doc.getElementById("dfn-new-term");
+      const span = doc.getElementById("old-term");
+      expect(span.parentElement).toBe(dfn);
+      expect(dfn.firstElementChild).toBe(span);
+    });
+
+    it("ignores empty entries in comma-separated list", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p>
+            <dfn id="dfn-some-term" data-old-ids="valid-old, , ,  ">some term</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+
+      const validOld = doc.getElementById("valid-old");
+      expect(validOld).not.toBeNull();
+      expect(validOld.className).toBe("respec-old-id");
+
+      // Only one span should be inserted (the valid one)
+      const container = doc.getElementById("dfn-some-term").parentElement;
+      const oldIdSpans = container.querySelectorAll(".respec-old-id");
+      expect(oldIdSpans).toHaveSize(1);
+    });
+
+    it("warns when a data-old-ids value conflicts with an existing ID", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p>
+            <span id="existing-id">pre-existing element</span>
+            <dfn id="dfn-term" data-old-ids="existing-id">term</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+
+      const warnings = doc.respec.warnings.filter(w => w.plugin === "core/dfn");
+      expect(warnings.length).toBeGreaterThan(0);
+      expect(warnings[0].message).toContain("existing-id");
+
+      // The conflicting span should NOT be inserted (original element unchanged)
+      const existingEl = doc.getElementById("existing-id");
+      expect(existingEl.tagName).toBe("SPAN");
+      expect(existingEl.classList.contains("respec-old-id")).toBeFalse();
+    });
+
+    it("handles a single old ID without a comma", async () => {
+      const body = `
+        <section>
+          <h2>Terms</h2>
+          <p>
+            <dfn id="dfn-renamed" data-old-ids="previous-name">renamed term</dfn>
+          </p>
+        </section>
+      `;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+
+      const span = doc.getElementById("previous-name");
+      expect(span).not.toBeNull();
+      expect(span.tagName).toBe("SPAN");
+      expect(span.classList.contains("respec-old-id")).toBeTrue();
+    });
+  });
 });
