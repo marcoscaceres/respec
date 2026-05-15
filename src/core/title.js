@@ -36,8 +36,7 @@ const l10n = getIntlData(localizationStrings);
 
 export function run(conf) {
   /** @type {HTMLElement} */
-  const h1Elem =
-    document.querySelector("h1#title") || html`<h1 id="title"></h1>`;
+  const h1Elem = document.querySelector("h1#title") || html`<h1></h1>`;
 
   // check existing element is ok to use
   if (h1Elem.isConnected && h1Elem.textContent.trim() === "") {
@@ -51,7 +50,18 @@ export function run(conf) {
   }
 
   // Decorate the spec title
-  if (!h1Elem.id) h1Elem.id = "title";
+  if (!h1Elem.id) {
+    const existing = document.getElementById("title");
+    if (existing && existing !== h1Elem) {
+      const msg =
+        'Another element already uses `id="title"`. ' +
+        "The spec's `<h1>` will use a different id to avoid a collision.";
+      showError(msg, name, { elements: [existing] });
+      h1Elem.id = "document-title";
+    } else {
+      h1Elem.id = "title";
+    }
+  }
   h1Elem.classList.add("title");
 
   setDocumentTitle(conf, h1Elem);

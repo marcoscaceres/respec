@@ -1,6 +1,7 @@
 "use strict";
 
 import {
+  errorFilters,
   makeBasicConfig,
   makeDefaultBody,
   makeRSDoc,
@@ -8,6 +9,7 @@ import {
 } from "../SpecHelper.js";
 
 describe("Core - Structure", () => {
+  const titleErrors = errorFilters.filter("core/title");
   const body = `
       ${makeDefaultBody()}
       <section class="introductory">
@@ -294,6 +296,30 @@ describe("Core - Structure", () => {
     expect(title).toBeTruthy();
     const anchor = doc.querySelector("#back-to-top a[href='#title']");
     expect(anchor).toBeTruthy();
+  });
+
+  it('uses id="document-title" when id="title" is already in use', async () => {
+    const ops = {
+      config: makeBasicConfig(),
+      body: `${makeDefaultBody()}<p id="title">conflict</p>`,
+    };
+    const doc = await makeRSDoc(ops);
+
+    const heading = doc.querySelector("h1.title");
+    expect(heading).toBeTruthy();
+    expect(heading.id).toBe("document-title");
+    expect(
+      doc.querySelector("#back-to-top a[href='#document-title']")
+    ).toBeTruthy();
+
+    const conflictingElement = doc.querySelector("p#title");
+    expect(conflictingElement.classList).toContain("respec-offending-element");
+
+    const errors = titleErrors(doc);
+    expect(errors).toHaveSize(1);
+    expect(errors[0].message).toContain(
+      'Another element already uses `id="title"`'
+    );
   });
 
   it("localizes table of contents", async () => {

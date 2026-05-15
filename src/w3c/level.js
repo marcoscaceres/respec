@@ -38,7 +38,7 @@ const l10n = getIntlData(localizationStrings);
 export function run(conf) {
   if (!conf.hasOwnProperty("level")) return;
 
-  const h1Elem = document.querySelector("h1#title");
+  const h1Elem = document.querySelector("h1.title");
 
   const level = parseInt(conf.level);
   if (!Number.isInteger(level) || level < 0) {

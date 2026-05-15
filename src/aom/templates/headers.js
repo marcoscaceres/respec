@@ -48,7 +48,7 @@ function getSpecSubTitleElem(conf) {
 export default conf => {
   return html`<div class="head">
     ${conf.specStatus !== "PD" ? (conf.logos ?? []).map(showLogo) : ""}
-    ${document.querySelector("h1#title")} ${getSpecSubTitleElem(conf)}
+    ${document.querySelector("h1.title")} ${getSpecSubTitleElem(conf)}
     <h2>
       ${conf.textStatus} -
       <time class="dt-published" datetime="${conf.dashDate}"

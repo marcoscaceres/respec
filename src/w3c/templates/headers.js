@@ -244,7 +244,7 @@ export default (conf, options) => {
     ${(conf.logos ?? []).length
       ? html`<p class="logos">${(conf.logos ?? []).map(showLogo)}</p>`
       : ""}
-    ${document.querySelector("h1#title")} ${getSpecSubTitleElem(conf)}
+    ${document.querySelector("h1.title")} ${getSpecSubTitleElem(conf)}
     <p id="w3c-state">${renderSpecTitle(conf)}</p>
     <details open="${localStorage.getItem("tr-metadata") || "true"}">
       <summary>${l10n.more_details_about_this_doc}</summary>

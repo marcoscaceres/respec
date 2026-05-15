@@ -16,7 +16,7 @@ export default (conf, options) => {
     existingCopyright.remove();
   }
 
-  const specTitleElem = document.querySelector("h1#title");
+  const specTitleElem = document.querySelector("h1.title");
   const specTitleElemClone = specTitleElem?.cloneNode(true);
 
   return html`<div class="head">
