@@ -32,6 +32,14 @@ describe("W3C — Bibliographic References", () => {
       href: "http://test.com",
       publisher: "Publisher Here",
     },
+    TestRef4: {
+      title: "Pages test",
+      href: "http://test.com",
+      authors: ["Jane Doe"],
+      publisher: "Test Publisher",
+      pages: "369-384",
+      date: "2003",
+    },
     FOOBARGLOP: {
       aliasOf: "BARBAR",
     },
@@ -48,7 +56,7 @@ describe("W3C — Bibliographic References", () => {
   const body = `
     <section id='sotd'>
       <p>[[DOM]] [[dom]] [[fetch]] [[?FeTcH]] [[FETCh]] [[fetCH]]
-      <p>foo [[TestRef1]] [[TestRef2]] [[TestRef3]]</p>
+      <p>foo [[TestRef1]] [[TestRef2]] [[TestRef3]] [[TestRef4]]</p>
       <p>[[EVERCOOKIE]]</p>
     </section>
     <section id='sample'>
@@ -84,6 +92,19 @@ describe("W3C — Bibliographic References", () => {
     expect(refWithPeriodInEnd.textContent.trim()).toBe(
       "Test ref title. William Shakespeare Jr. Publishers Inc. URL: http://test.com"
     );
+  });
+
+  it("includes pages in the rendered reference", () => {
+    const ref = doc.querySelector("#bib-testref4 + dd");
+    expect(ref).withContext("TestRef4 dd should exist").toBeTruthy();
+    expect(ref.textContent).toMatch(/pp\. 369-384/);
+    // pages appears after publisher and before date
+    const text = ref.textContent.trim();
+    const publisherIdx = text.indexOf("Test Publisher");
+    const pagesIdx = text.indexOf("pp. 369-384");
+    const dateIdx = text.indexOf("2003");
+    expect(publisherIdx).toBeLessThan(pagesIdx);
+    expect(pagesIdx).toBeLessThan(dateIdx);
   });
 
   it("pings biblio service to see if it's running", () => {
