@@ -67,6 +67,14 @@ export function run() {
       continue;
     }
 
+    // externalDFN: a term borrowed from a spec not in the xref database.
+    // It is locally linkable (registered above) but must not be exported or
+    // appear in the "Terms defined by this specification" index.
+    if (dfn.classList.contains("externalDFN") && !dfn.dataset.cite) {
+      dfn.dataset.noexport = "";
+      dfn.dataset.noIndex = "";
+    }
+
     const [linkingText] = titles;
     computeType(dfn, linkingText);
     computeExport(dfn);

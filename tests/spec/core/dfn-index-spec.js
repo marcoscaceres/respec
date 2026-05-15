@@ -209,6 +209,27 @@ describe("Core — dfn-index", () => {
       expect(localIndex.querySelectorAll("cite")).toHaveSize(0);
       expect(localIndex.querySelectorAll(".bibref")).toHaveSize(0);
     });
+
+    it("excludes externalDFN terms from the local terms index", async () => {
+      const body = `<section id="content">
+          <h2>Content</h2>
+          <p>
+            <dfn>local term</dfn>
+            <dfn class="externalDFN">borrowed term</dfn>
+          </p>
+        </section>
+        <section id="index"></section>`;
+      const ops = makeStandardOps(null, body);
+      const doc = await makeRSDoc(ops);
+      const localIndex = doc.getElementById("index-defined-here");
+      localIndex.querySelectorAll(".print-only").forEach(el => el.remove());
+
+      const terms = [...localIndex.querySelectorAll("ul.index > li")].map(li =>
+        li.textContent.trim()
+      );
+      expect(terms).toContain("local term");
+      expect(terms).not.toContain("borrowed term");
+    });
   });
 
   describe("External Terms Index", () => {

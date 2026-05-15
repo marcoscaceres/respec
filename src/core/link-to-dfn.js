@@ -228,11 +228,6 @@ function processAnchor(anchor, dfn, titleToDfns) {
       .includes(linkFor)
   ) {
     noLocalMatch = true;
-  } else if (dfn.classList.contains("externalDFN")) {
-    // data-lt[0] serves as unique id for the dfn which this element references
-    const lt = dfn.dataset.lt ? dfn.dataset.lt.split("|") : [];
-    anchor.dataset.lt = lt[0] || dfn.textContent;
-    noLocalMatch = true;
   } else if (anchor.dataset.idl !== "partial") {
     anchor.href = `#${dfn.id}`;
     anchor.classList.add("internalDFN");
