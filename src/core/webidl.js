@@ -47,6 +47,11 @@ const templates = {
   },
   reference(wrapped, unescaped, context) {
     if (context.type === "extended-attribute") {
+      if (context.name === "Exposed") {
+        return html`<a data-link-type="interface" data-xref-type="interface"
+          >${wrapped}</a
+        >`;
+      }
       return wrapped;
     }
     let type = "_IDL_";

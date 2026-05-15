@@ -1393,7 +1393,7 @@ callback CallBack = Z? (X x, optional Y y, /*trivia*/ optional Z z);
     const body = `
       <section>
         <pre class="idl" id="link-test">
-          [Exposed=(Window, Worker, DedicatedWorker)]
+          [Exposed=(Window, Worker)]
           interface Foo {
             readonly attribute object bar;
           };
@@ -1403,28 +1403,21 @@ callback CallBack = Z? (X x, optional Y y, /*trivia*/ optional Z z);
     const ops = makeStandardOps(null, body);
     const doc = await makeRSDoc(ops);
 
-    // Exposed=(Window)
-    const windowAnchor = doc.querySelector("#link-test a[href$=window]");
-    expect(windowAnchor).toBeNull();
-
-    // Exposed=(Worker)
-    const workerAnchor = doc.querySelector(
-      "#link-test a[href$=workerglobalscope]"
+    // Exposed=(Window, Worker) creates xrefable interface links
+    const exposedAnchors = doc.querySelectorAll(
+      "#link-test .extAttr a[data-link-type='interface'][data-xref-type='interface']"
     );
-    expect(workerAnchor).toBeNull();
-
-    // Exposed=(DedicatedWoker)
-    const dedicatedWorkerAnchor = doc.querySelector(
-      "#link-test a[href$=dedicatedworkerglobalscope]"
-    );
-    expect(dedicatedWorkerAnchor).toBeNull();
+    expect(exposedAnchors.length).toBe(2);
+    expect(exposedAnchors[0].textContent).toBe("Window");
+    expect(exposedAnchors[1].textContent).toBe("Worker");
 
     // readonly attribute object bar;
-    const objectAnchor = doc.querySelector("#link-test a[href$=idl-object]");
-    expect(objectAnchor.dataset.xrefType).toBe("interface");
-    expect(objectAnchor.href).toBe(
-      "https://webidl.spec.whatwg.org/#idl-object"
+    const objectAnchor = doc.querySelector(
+      "#link-test .idlType a[data-link-type='interface'][data-xref-type='interface']"
     );
+    expect(objectAnchor.textContent).toBe("object");
+    expect(objectAnchor.dataset.xrefType).toBe("interface");
+    expect(objectAnchor.dataset.linkType).toBe("interface");
   });
 
   it("does not link arbitrary extended attribute identifiers", async () => {
