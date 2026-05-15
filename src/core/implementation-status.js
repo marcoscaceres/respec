@@ -152,9 +152,10 @@ const BROWSER_GROUPS = Map.groupBy(
 
 function fallbackResult() {
   return {
-    dt: html`Implementation status:`,
-    dd: html`<a href="https://webstatus.dev/">Web Platform Status</a>`,
+    content: html`<a href="https://webstatus.dev/">Web Platform Status</a>`,
     moreInfoUrl: "https://webstatus.dev/",
+    summary: "",
+    featureName: "",
   };
 }
 
@@ -173,6 +174,13 @@ export function prepare(conf) {
       ${css}
     </style>`
   );
+  const preconnect = html`<link
+    rel="preconnect"
+    href="https://www.w3.org"
+    crossorigin
+    class="${options.removeOnSave ? "removeOnSave" : ""}"
+  />`;
+  document.head.appendChild(preconnect);
 }
 
 /** @param {RespecConfig} conf */
@@ -183,34 +191,71 @@ export async function run(conf) {
     conf.implementationStatus
   );
   const headDlElem = document.querySelector(".head dl");
-  if (!headDlElem) return;
+  if (!headDlElem || !headDlElem.parentElement) return;
 
-  const result = fetchAndRender(conf, options).catch(handleError);
+  const dt = html`<dt class="baseline-title">Browser support:</dt>`;
+  const dd = html`<dd
+    class="baseline-status baseline-status--loading"
+    aria-busy="true"
+  >
+    Checking browser support…
+  </dd>`;
+  const summary = html`<span
+    class="baseline-a11y-summary"
+    aria-live="polite"
+    aria-atomic="true"
+  ></span>`;
 
-  const dtPromise = result.then(r => r.dt);
-  const ddPromise = result.then(r => r.dd);
+  headDlElem.append(dt, dd);
+  headDlElem.parentElement.append(summary);
 
-  const definitionPair = html`<dt class="baseline-title">
-      ${{ any: dtPromise, placeholder: "Implementation status:" }}
-    </dt>
-    <dd class="baseline-status">
-      ${{ any: ddPromise, placeholder: "Checking availability..." }}
-    </dd>`;
-  headDlElem.append(...definitionPair.childNodes);
-
-  const rendered = await result;
-
-  if (options.removeOnSave) {
-    const savedUrl = rendered.moreInfoUrl || "https://webstatus.dev/";
-    sub(
-      "beforesave",
-      /** @param {Document} outputDoc */ outputDoc => {
-        const dd = outputDoc.querySelector(".baseline-status");
-        if (!dd) return;
-        html.bind(dd)`<a href="${savedUrl}">Web Platform Status</a>`;
-      }
-    );
+  let resolvedResult;
+  try {
+    resolvedResult = await fetchAndRender(conf, options);
+    dd.classList.remove("baseline-status--loading");
+    dd.classList.add("baseline-status--loaded");
+    dd.removeAttribute("aria-busy");
+    html.bind(dd)`${resolvedResult.content}`;
+    if (resolvedResult.summary) {
+      summary.textContent = resolvedResult.summary;
+    }
+  } catch (err) {
+    resolvedResult = handleError(err);
+    dd.classList.remove("baseline-status--loading");
+    dd.removeAttribute("aria-busy");
+    html.bind(dd)`${resolvedResult.content}`;
+    summary.textContent = "Browser support data unavailable.";
   }
+
+  sub(
+    "beforesave",
+    /** @param {Document} outputDoc */ outputDoc => {
+      const savedDd = outputDoc.querySelector(".baseline-status");
+      if (!savedDd) return;
+
+      savedDd.classList.remove(
+        "baseline-status--loading",
+        "baseline-status--loaded"
+      );
+      savedDd.removeAttribute("aria-busy");
+      outputDoc.querySelector(".baseline-a11y-summary")?.remove();
+
+      if (options.removeOnSave) {
+        const savedUrl = resolvedResult.moreInfoUrl || "https://webstatus.dev/";
+        html.bind(savedDd)`<a href="${savedUrl}">Web Platform Status</a>`;
+      } else {
+        const moreInfoLink = savedDd.querySelector(".baseline-more-info");
+        if (moreInfoLink) {
+          const featureName = resolvedResult.featureName || "browser support";
+          moreInfoLink.textContent = "Current browser support";
+          moreInfoLink.setAttribute(
+            "aria-label",
+            `Current browser support for ${featureName} on webstatus.dev`
+          );
+        }
+      }
+    }
+  );
 }
 
 /** @param {unknown} err */
@@ -260,7 +305,7 @@ async function fetchAndRender(conf, options) {
   }
 
   const baseline = computeAggregate(features);
-  const statusText = STATUS_TEXT.get(baseline);
+  const statusText = /** @type {string} */ (STATUS_TEXT.get(baseline));
   const support = aggregateSupport(features);
 
   pub("amend-user-config", { implementationStatus: options.feature || true });
@@ -435,7 +480,7 @@ function getLogoSrc(browserId) {
 
 /**
  * @param {"high" | "low" | ""} baseline
- * @param {string | undefined} statusText
+ * @param {string} statusText
  * @param {Map<string, boolean>} support
  * @param {WebFeatureEntry[]} features
  */
@@ -492,9 +537,20 @@ function renderBadge(baseline, statusText, support, features) {
   const moreInfoLabel = singleFeature?.name
     ? `More info about ${singleFeature.name} support`
     : "More info about browser support";
+  const featureName = singleFeature?.name || "";
 
-  const dt = html`${statusText}:${icon}`;
-  const dd = html`${browserGroup}
+  const supportedBrowsers = [...support.entries()]
+    .filter(([, supported]) => supported)
+    .map(([id]) => BROWSERS.get(id)?.name || id);
+
+  const summary = `${featureName || "This feature"}: ${statusText}. ${
+    supportedBrowsers.length
+      ? `Supported in ${supportedBrowsers.join(", ")}.`
+      : "Limited browser support."
+  }`;
+
+  const content = html`<span class="baseline-status-label">${statusText}:</span
+    >${icon}${browserGroup}
     <a
       class="baseline-more-info"
       href="${moreInfoUrl}"
@@ -502,5 +558,5 @@ function renderBadge(baseline, statusText, support, features) {
       >More info</a
     >`;
 
-  return { dt, dd, moreInfoUrl };
+  return { content, moreInfoUrl, summary, featureName };
 }
