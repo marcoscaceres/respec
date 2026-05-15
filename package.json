@@ -12,6 +12,7 @@
     "respec2html": "tools/respec2html.js"
   },
   "main": "./tools/respecDocWriter.js",
+  "types": "./types.d.ts",
   "type": "module",
   "repository": {
     "type": "git",
@@ -100,7 +101,8 @@
   "files": [
     "builds/",
     "tools/respec2html.js",
-    "tools/respecDocWriter.js"
+    "tools/respecDocWriter.js",
+    "types.d.ts"
   ],
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"
