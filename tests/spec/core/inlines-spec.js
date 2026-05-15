@@ -1,6 +1,11 @@
 "use strict";
 
-import { flushIframes, makeRSDoc, makeStandardOps } from "../SpecHelper.js";
+import {
+  flushIframes,
+  makeRSDoc,
+  makeStandardOps,
+  warningFilters,
+} from "../SpecHelper.js";
 
 describe("Core - Inlines", () => {
   afterAll(flushIframes);
@@ -430,6 +435,67 @@ describe("Core - Inlines", () => {
     const roleAttribute = doc.querySelector("#test4 a");
     expect(roleAttribute.textContent).toBe("role");
     expect(roleAttribute.hash).toBe("#attr-aria-role");
+  });
+
+  it("processes [$ abstract-op $] shorthand", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="abstract-op">Fetch</dfn>
+        <dfn data-dfn-type="abstract-op" data-dfn-for="ReadableStream">set up</dfn>
+        <p id="basic">[$ Fetch $]</p>
+        <p id="for-context">[$ ReadableStream/set up $]</p>
+        <p id="display-text">[$ Fetch|fetching $]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+
+    const basic = doc.querySelector("#basic code a");
+    expect(basic).toBeTruthy();
+    expect(basic.dataset.linkType).toBe("abstract-op");
+    expect(basic.textContent).toBe("Fetch");
+
+    const forCtx = doc.querySelector("#for-context code a");
+    expect(forCtx).toBeTruthy();
+    expect(forCtx.dataset.linkType).toBe("abstract-op");
+    expect(forCtx.dataset.linkFor).toBe("ReadableStream");
+    expect(forCtx.textContent).toBe("set up");
+
+    const display = doc.querySelector("#display-text code a");
+    expect(display).toBeTruthy();
+    expect(display.dataset.linkType).toBe("abstract-op");
+    expect(display.textContent).toBe("fetching");
+    expect(display.dataset.lt).toBe("Fetch");
+  });
+
+  it("warns on invalid !!type in [$ $] shorthand", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="abstract-op">Fetch</dfn>
+        <p id="test">[$ Fetch!!nonsense $]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const link = doc.querySelector("#test code a");
+    expect(link).toBeTruthy();
+    expect(link.dataset.linkType).toBe("abstract-op");
+    const warnings = warningFilters.filter("core/inlines")(doc);
+    expect(warnings).toHaveSize(1);
+    expect(warnings[0].message).toContain("!!nonsense");
+  });
+
+  it("supports [$ term|display!!type $] combined syntax", async () => {
+    const body = `
+      <section>
+        <dfn data-dfn-type="abstract-op">Fetch</dfn>
+        <p id="test">[$ Fetch|fetching!!abstract-op $]</p>
+      </section>
+    `;
+    const doc = await makeRSDoc(makeStandardOps(null, body));
+    const link = doc.querySelector("#test code a");
+    expect(link).toBeTruthy();
+    expect(link.dataset.linkType).toBe("abstract-op");
+    expect(link.textContent).toBe("fetching");
+    expect(link.dataset.lt).toBe("Fetch");
   });
 
   it("processes [= BikeShed style inline links =]", async () => {

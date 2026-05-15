@@ -73,6 +73,7 @@ const inlineExpansion = /(?:\[\[\[(?:!|\\|\?)?#?[\w-.]+\]\]\])/; // [[[expand]]]
 const inlineAnchor = /(?:\[=[^=]+=\])/; // Inline [= For/link =]
 const inlineElement = /(?:\[\^[^^]+\^\])/; // Inline [^element^]
 const inlineCddlReference = /(?:\{\^[^}^]+\^\})/; // {^cddl-type^}, {^type/key^}
+const inlineAbstractOp = /(?:\[\$[^$]+\$\])/; // Inline [$ abstract-op $]
 
 /**
  * @example [^iframe^] // [^element^]
@@ -147,6 +148,49 @@ function inlineCddlMatches(matched) {
       data-xref-for="${typeName}"
       data-link-for="${typeName}"
       >${member}</a
+    ></code
+  >`;
+}
+
+/**
+ * @example [$ Fetch $] => <code><a data-link-type="abstract-op">Fetch</a></code>
+ * @example [$ ReadableStream/set up $] => with data-link-for
+ * @example [$ Fetch|fetching $] => display text "fetching"
+ * @param {string} matched
+ * @return {HTMLElement}
+ */
+function inlineAbstractOpMatches(matched) {
+  matched = matched.slice(2, -2); // Chop [$ $]
+  const parts = splitByFor(matched);
+  const [isFor, rawContent] = parts.length === 2 ? parts : [null, parts[0]];
+
+  let typeHint = "";
+  let content = rawContent;
+  if (rawContent.includes("!!")) {
+    [content, typeHint] = rawContent.split("!!", 2);
+    content = content.trim();
+    typeHint = typeHint.trim();
+  }
+  if (typeHint && typeHint !== "abstract-op") {
+    showWarning(
+      `Unrecognized type hint \`!!${typeHint}\` in \`[$ ${matched} $]\`. ` +
+        `Only \`!!abstract-op\` is valid.`,
+      name
+    );
+  }
+
+  const [linkingText, text] = content.includes("|")
+    ? content.split("|", 2).map(s => s.trim())
+    : [null, content];
+  const processedContent = processInlineContent(text);
+  const forContext = isFor ? norm(isFor) : null;
+  return html`<code
+    ><a
+      data-link-type="abstract-op"
+      data-link-for="${forContext}"
+      data-xref-for="${forContext}"
+      data-lt="${linkingText}"
+      >${processedContent}</a
     ></code
   >`;
 }
@@ -346,6 +390,7 @@ export function run(conf) {
         keywords,
         inlineIdlReference,
         inlineCddlReference,
+        inlineAbstractOp,
         inlineVariable,
         inlineCitation,
         inlineExpansion,
@@ -382,6 +427,9 @@ export function run(conf) {
           break;
         case t.startsWith("|"):
           df.append(inlineVariableMatches(t));
+          break;
+        case t.startsWith("[$"):
+          df.append(inlineAbstractOpMatches(t));
           break;
         case t.startsWith("[="):
           df.append(inlineAnchorMatches(t));
