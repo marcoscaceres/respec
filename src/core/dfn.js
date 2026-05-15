@@ -74,7 +74,8 @@ export function run() {
     // Only add `lt`s that are different from the text content and local-lts
     const localLt = (dfn.dataset.localLt || "").split("|").map(norm);
     const lt = titles.filter(t => !localLt.includes(t));
-    if (lt.length > 1 || linkingText !== norm(dfn.textContent)) {
+    const isInHeading = !!dfn.closest("h1, h2, h3, h4, h5, h6");
+    if (lt.length > 1 || linkingText !== norm(dfn.textContent) || isInHeading) {
       dfn.dataset.lt = lt.join("|");
     }
   }
